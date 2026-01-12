@@ -1,6 +1,6 @@
 package amalitech.blog.dao;
 
-import amalitech.blog.model.Tags;
+import amalitech.blog.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,9 +12,9 @@ import java.util.List;
  * Data Access Object (DAO) for Tags entities.
  * Provides CRUD operations for blog post tags with soft-delete support.
  */
-public class TagsDAO implements DAO<Tags, Long> {
+public class TagDAO implements DAO<Tag, Long> {
 
-  private final Logger log = LoggerFactory.getLogger(TagsDAO.class);
+  private final Logger log = LoggerFactory.getLogger(TagDAO.class);
 
   /**
    * Creates a new tag in the database and sets the generated ID on the entity.
@@ -24,7 +24,7 @@ public class TagsDAO implements DAO<Tags, Long> {
    * @throws RuntimeException if a database error occurs
    */
   @Override
-  public Tags create(Tags entity) {
+  public Tag create(Tag entity) {
 
     final String INSERT = """
                 INSERT INTO tags (name)
@@ -62,7 +62,7 @@ public class TagsDAO implements DAO<Tags, Long> {
    * @throws RuntimeException if a database error occurs
    */
   @Override
-  public Tags get(Long id) {
+  public Tag get(Long id) {
 
     final String SELECT_BY_ID = """
                 SELECT id, name, created_at, updated_at, is_deleted
@@ -99,7 +99,7 @@ public class TagsDAO implements DAO<Tags, Long> {
    * @throws RuntimeException if a database error occurs
    */
   @Override
-  public List<Tags> getAll(int page, int pageSize) {
+  public List<Tag> getAll(int page, int pageSize) {
 
     int effectivePage = Math.max(page, 1);
     int effectivePageSize = Math.max(pageSize, 1);
@@ -113,7 +113,7 @@ public class TagsDAO implements DAO<Tags, Long> {
                 LIMIT ? OFFSET ?
             """;
 
-    List<Tags> tags = new ArrayList<>();
+    List<Tag> tags = new ArrayList<>();
 
     try (Connection connection = DatabaseConnection.getConnection();
          PreparedStatement ps = connection.prepareStatement(SELECT_ALL_PAGED)) {
@@ -141,7 +141,7 @@ public class TagsDAO implements DAO<Tags, Long> {
    * @return list of up to 100 most recently created non-deleted tags
    * @throws RuntimeException if a database error occurs
    */
-  public List<Tags> getAll() {
+  public List<Tag> getAll() {
     return getAll(1, 100);
   }
 
@@ -155,7 +155,7 @@ public class TagsDAO implements DAO<Tags, Long> {
    * @throws RuntimeException if a database error occurs
    */
   @Override
-  public Tags update(Long id, Tags entity) {
+  public Tag update(Long id, Tag entity) {
 
     final String UPDATE = """
                 UPDATE tags
@@ -234,8 +234,8 @@ public class TagsDAO implements DAO<Tags, Long> {
    * @return populated Tags instance
    * @throws SQLException if column access fails
    */
-  private Tags mapRowToTag(ResultSet rs) throws SQLException {
-    Tags tag = new Tags();
+  private Tag mapRowToTag(ResultSet rs) throws SQLException {
+    Tag tag = new Tag();
     tag.setId(rs.getLong("id"));
     tag.setName(rs.getString("name"));
     tag.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
