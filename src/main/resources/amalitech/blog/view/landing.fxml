@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.text.Font?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="amalitech.blog.controller.LandingController"
+            style="-fx-background-color: #f8f9fa;">
+
+    <top>
+        <HBox alignment="CENTER_RIGHT" spacing="15" style="-fx-padding: 20; -fx-background-color: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);">
+            <Button text="Login" onAction="#handleLogin"
+                    style="-fx-background-color: #667eea; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 10 30 10 30; -fx-cursor: hand;">
+                <font>
+                    <Font name="System Bold" size="14"/>
+                </font>
+            </Button>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox alignment="CENTER" spacing="30" style="-fx-padding: 60;">
+
+            <Label text="B-BLOG" style="-fx-text-fill: #667eea;">
+                <font>
+                    <Font name="System Bold" size="72"/>
+                </font>
+            </Label>
+
+            <Label text="Share Your Stories with the World" style="-fx-text-fill: #2c3e50;">
+                <font>
+                    <Font name="System Bold" size="28"/>
+                </font>
+            </Label>
+
+            <Label text="A modern blogging platform where ideas come to life"
+                   style="-fx-text-fill: #6c757d;" wrapText="true" maxWidth="600" textAlignment="CENTER">
+                <font>
+                    <Font size="16"/>
+                </font>
+            </Label>
+
+            <HBox alignment="CENTER" spacing="20" style="-fx-padding: 20 0 0 0;">
+                <Button text="Get Started" onAction="#handleLogin"
+                        style="-fx-background-color: #667eea; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 15 40 15 40; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(102,126,234,0.3), 10, 0, 0, 3);">
+                    <font>
+                        <Font name="System Bold" size="16"/>
+                    </font>
+                </Button>
+                <Button text="Learn More" onAction="#handleLearnMore"
+                        style="-fx-background-color: white; -fx-text-fill: #667eea; -fx-border-color: #667eea; -fx-border-width: 2; -fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 15 40 15 40; -fx-cursor: hand;">
+                    <font>
+                        <Font name="System Bold" size="16"/>
+                    </font>
+                </Button>
+            </HBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER" style="-fx-padding: 20; -fx-background-color: white;">
+            <Label text="© 2026 B-BLOG. All rights reserved." style="-fx-text-fill: #6c757d;">
+                <font>
+                    <Font size="12"/>
+                </font>
+            </Label>
+        </HBox>
+    </bottom>
+
+</BorderPane>

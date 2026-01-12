@@ -1,0 +1,67 @@
+.auth-screen {
+    -fx-background-color: linear-gradient(to bottom right, #667eea 0%, #764ba2 100%);
+}
+
+.auth-card {
+    -fx-background-color: white;
+    -fx-background-radius: 15;
+    -fx-padding: 40;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0, 0, 5);
+}
+
+.auth-logo {
+    -fx-text-fill: #667eea;
+}
+
+.auth-title {
+    -fx-text-fill: #333333;
+}
+
+.auth-subtitle {
+    -fx-text-fill: #666666;
+}
+
+.auth-field {
+    -fx-background-color: #f5f5f5;
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+    -fx-border-color: transparent;
+    -fx-border-radius: 8;
+}
+
+.auth-field:focused {
+    -fx-background-color: white;
+    -fx-border-color: #667eea;
+    -fx-border-width: 2;
+}
+
+.field-label {
+    -fx-text-fill: #333333;
+}
+
+.error-label {
+    -fx-background-color: #fee;
+    -fx-text-fill: #c33;
+    -fx-padding: 10;
+    -fx-background-radius: 8;
+    -fx-border-color: #fcc;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+}
+
+.link-primary {
+    -fx-text-fill: #667eea;
+    -fx-border-color: transparent;
+}
+
+.link-primary:hover {
+    -fx-underline: true;
+}
+
+.link-primary:visited {
+    -fx-text-fill: #667eea;
+}
+
+.separator {
+    -fx-background-color: #e0e0e0;
+}

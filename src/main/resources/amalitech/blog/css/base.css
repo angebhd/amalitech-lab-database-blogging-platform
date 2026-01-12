@@ -1,0 +1,115 @@
+.text-light {
+    -fx-text-fill: rgba(255, 255, 255, 0.85);
+}
+
+.text-muted {
+    -fx-text-fill: rgba(255, 255, 255, 0.7);
+}
+
+.text-dark {
+    -fx-text-fill: #333333;
+}
+
+/* Title Styles */
+.title-huge {
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 10, 0, 0, 3);
+}
+
+.subtitle-large {
+    -fx-text-fill: rgba(255, 255, 255, 0.95);
+}
+
+/* Button Styles - Primary */
+.btn-primary {
+    -fx-background-color: white;
+    -fx-text-fill: #667eea;
+    -fx-background-radius: 25;
+    -fx-padding: 15 40 15 40;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0, 0, 2);
+}
+
+.btn-primary:hover {
+    -fx-background-color: #f0f0f0;
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.btn-primary:pressed {
+    -fx-background-color: #e0e0e0;
+}
+
+/* Button Styles - Secondary */
+.btn-secondary {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-border-color: white;
+    -fx-border-width: 2;
+    -fx-background-radius: 25;
+    -fx-border-radius: 25;
+    -fx-padding: 15 40 15 40;
+    -fx-cursor: hand;
+}
+
+.btn-secondary:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+    -fx-scale-x: 1.05;
+    -fx-scale-y: 1.05;
+}
+
+.btn-secondary:pressed {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Button Styles - Outline */
+.btn-outline {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+    -fx-text-fill: white;
+    -fx-background-radius: 20;
+    -fx-padding: 10 30 10 30;
+    -fx-cursor: hand;
+    -fx-border-color: rgba(255, 255, 255, 0.3);
+    -fx-border-width: 1;
+    -fx-border-radius: 20;
+}
+
+.btn-outline:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-outline:pressed {
+    -fx-background-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Button Styles - Solid (for forms) */
+.btn-solid {
+    -fx-background-color: #667eea;
+    -fx-text-fill: white;
+    -fx-background-radius: 8;
+    -fx-padding: 12 30 12 30;
+    -fx-cursor: hand;
+}
+
+.btn-solid:hover {
+    -fx-background-color: #5568d3;
+}
+
+.btn-solid:pressed {
+    -fx-background-color: #4451b8;
+}
+
+/* Input Fields */
+.text-field {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-padding: 12;
+    -fx-font-size: 14px;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 8;
+}
+
+.text-field:focused {
+    -fx-border-color: #667eea;
+    -fx-border-width: 2;
+}
