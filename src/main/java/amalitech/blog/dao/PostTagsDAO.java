@@ -156,9 +156,6 @@ public class PostTagsDAO implements DAO<PostTags, Long> {
                     "Use delete(postId, tagId) instead.");
   }
 
-  // ────────────────────────────────────────────────
-  //          Most useful real methods for many-to-many
-  // ────────────────────────────────────────────────
 
   /**
    * Removes the association between a specific post and tag.

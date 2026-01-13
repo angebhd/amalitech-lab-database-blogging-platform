@@ -1,7 +1,7 @@
 package amalitech.blog.controller.auth;
 import amalitech.blog.model.User;
 import amalitech.blog.service.UserService;
-import amalitech.blog.utils.Validator;
+import amalitech.blog.utils.ValidatorUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -58,7 +58,7 @@ public class SignUpController {
       return;
     }
 
-    if (!Validator.validateEmail(email)) {
+    if (!ValidatorUtil.validateEmail(email)) {
       showError("Please enter a valid email address");
       return;
     }

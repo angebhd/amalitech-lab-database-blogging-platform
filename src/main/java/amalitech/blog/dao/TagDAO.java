@@ -90,6 +90,40 @@ public class TagDAO implements DAO<Tag, Long> {
   }
 
   /**
+   * Retrieves a tag by its name, excluding soft-deleted records.
+   *
+   * @param name the name of the tag to retrieve
+   * @return the tag if found and not deleted, otherwise {@code null}
+   * @throws RuntimeException if a database error occurs
+   */
+  public Tag get(String name) {
+
+    final String SELECT_BY_NAME = """
+                SELECT id, name, created_at, updated_at, is_deleted
+                FROM tags
+                WHERE name = ? AND is_deleted = false
+            """;
+
+    try (Connection connection = DatabaseConnection.getConnection();
+         PreparedStatement ps = connection.prepareStatement(SELECT_BY_NAME)) {
+
+      ps.setString(1, name);
+
+      try (ResultSet rs = ps.executeQuery()) {
+        if (rs.next()) {
+          return mapRowToTag(rs);
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Error fetching tag with name {}", name, e);
+      throw new RuntimeException("Failed to fetch tag", e);
+    }
+
+    return null;
+  }
+
+  /**
    * Retrieves a paginated list of all non-deleted tags, ordered by creation date descending.
    * Page numbering starts at 1.
    *
@@ -224,6 +258,30 @@ public class TagDAO implements DAO<Tag, Long> {
     } catch (SQLException e) {
       log.error("Error soft-deleting tag with id {}", id, e);
       throw new RuntimeException("Failed to delete tag", e);
+    }
+  }
+
+  /**
+   * Check is the tag name already exists
+   *
+   * @param name tag name
+   * @return {@code true} if the tag is found, {@code false} otherwise
+   */
+  public boolean existsByName(String name){
+    String sql = "SELECT 1 FROM tags WHERE name = ? LIMIT 1";
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      ps.setString(1, name);
+
+      try (ResultSet rs = ps.executeQuery()) {
+        return rs.next();
+      }
+
+    } catch (SQLException e) {
+      log.error("Failed to check if tag with name {} exists", name);
+      throw new RuntimeException("Error checking if user exists", e);
     }
   }
 

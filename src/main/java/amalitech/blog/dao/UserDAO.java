@@ -13,17 +13,21 @@ import java.util.Optional;
 /**
  * Data Access Object (DAO) for User entities.
  * Provides CRUD operations for users with soft-delete support.
+ * <p>
+ * All read operations exclude soft-deleted records by default,
+ * but provide overloads to include them when needed (e.g. admin views, audit).
+ * </p>
  */
 public class UserDAO implements DAO<User, Long> {
 
   private final Logger log = LoggerFactory.getLogger(UserDAO.class);
 
   /**
-   * Creates a new user in the database and sets the generated ID on the entity.
+   * Creates a new user in the database and sets the generated ID on the provided entity.
    *
-   * @param entity the user to create (will be modified to include generated ID)
-   * @return the created user with populated ID
-   * @throws RuntimeException if a database error occurs
+   * @param entity the user entity to persist (will be modified to include the generated ID)
+   * @return the same entity instance with the generated ID populated
+   * @throws RuntimeException if a database error occurs during insertion
    */
   @Override
   public User create(User entity) {
@@ -53,11 +57,27 @@ public class UserDAO implements DAO<User, Long> {
     }
   }
 
+  /**
+   * Retrieves a user by their primary key (ID), excluding soft-deleted records by default.
+   *
+   * @param id the unique identifier of the user
+   * @return the matching user or {@code null} if not found or soft-deleted
+   * @throws RuntimeException if a database error occurs
+   * @see #get(Long, boolean)
+   */
   @Override
   public User get(Long id) {
     return get(id, false);
   }
 
+  /**
+   * Retrieves a user by their primary key (ID), with optional inclusion of soft-deleted records.
+   *
+   * @param id             the unique identifier of the user
+   * @param includeDeleted if {@code true}, returns the user even if marked as deleted
+   * @return the matching user or {@code null} if not found
+   * @throws RuntimeException if a database error occurs
+   */
   public User get(Long id, boolean includeDeleted) {
     String sql = """
                 SELECT * FROM users
@@ -87,12 +107,13 @@ public class UserDAO implements DAO<User, Long> {
   }
 
   /**
-   * Finds all users matching a specific column value.
+   * Finds all users matching the given value in the specified column.
    *
-   * @param value          value to search for
-   * @param column         column to query against (from UserColumn enum)
-   * @param includeDeleted whether to include soft-deleted users
-   * @return list of matching users (usually 0 or 1, but can be more if data is inconsistent)
+   * @param value          the value to search for (e.g. username, email)
+   * @param column         the column to query (must be from {@link UserColumn} enum)
+   * @param includeDeleted if {@code true}, includes soft-deleted users
+   * @return list of matching users (typically 0 or 1, but can be more if data integrity is broken)
+   * @throws RuntimeException if a database error occurs
    */
   public List<User> findBy(String value, UserColumn column, boolean includeDeleted) {
     String sql = """
@@ -126,8 +147,17 @@ public class UserDAO implements DAO<User, Long> {
   }
 
   /**
-   * Retrieves exactly one user by column value (or null if none found).
-   * Throws exception if more than one matching user is found.
+   * Retrieves exactly one user matching the given value in the specified column.
+   * <p>
+   * Throws an exception if more than one record is found (indicating data inconsistency).
+   * </p>
+   *
+   * @param value          the value to search for
+   * @param column         the column to query against
+   * @param includeDeleted whether to include soft-deleted records
+   * @return the matching user or {@code null} if none found
+   * @throws IllegalStateException if more than one matching user is found
+   * @throws RuntimeException      if a database error occurs
    */
   public User getBy(String value, UserColumn column, boolean includeDeleted) {
     List<User> results = findBy(value, column, includeDeleted);
@@ -142,30 +172,69 @@ public class UserDAO implements DAO<User, Long> {
   }
 
   /**
-   * Modern/optional style variant of getBy
+   * Modern variant of {@link #getBy(String, UserColumn, boolean)} using {@link Optional}.
+   *
+   * @param value          value to search for
+   * @param column         column to query
+   * @param includeDeleted whether to include deleted records
+   * @return an Optional containing the user if found, empty otherwise
+   * @throws IllegalStateException if multiple matches are found
+   * @throws RuntimeException      if a database error occurs
    */
   public Optional<User> findOneBy(String value, UserColumn column, boolean includeDeleted) {
     return Optional.ofNullable(getBy(value, column, includeDeleted));
   }
 
+  /**
+   * Convenience overload — excludes deleted records by default.
+   *
+   * @see #findBy(String, UserColumn, boolean)
+   */
   public List<User> findBy(String value, UserColumn column) {
     return findBy(value, column, false);
   }
 
+  /**
+   * Convenience overload — excludes deleted records by default.
+   *
+   * @see #getBy(String, UserColumn, boolean)
+   */
   public User getBy(String value, UserColumn column) {
     return getBy(value, column, false);
   }
 
+  /**
+   * Convenience overload — excludes deleted records by default.
+   *
+   * @see #findOneBy(String, UserColumn, boolean)
+   */
   public Optional<User> findOneBy(String value, UserColumn column) {
     return findOneBy(value, column, false);
   }
 
-
+  /**
+   * Retrieves a paginated list of users, excluding soft-deleted records by default.
+   *
+   * @param page     1-based page number
+   * @param pageSize number of records per page
+   * @return paginated list of users
+   * @throws RuntimeException if a database error occurs
+   * @see #getAll(int, int, boolean)
+   */
   @Override
   public List<User> getAll(int page, int pageSize) {
     return getAll(page, pageSize, false);
   }
 
+  /**
+   * Retrieves a paginated list of users with optional inclusion of soft-deleted records.
+   *
+   * @param page           1-based page number
+   * @param pageSize       number of records per page
+   * @param includeDeleted if {@code true}, includes soft-deleted users
+   * @return paginated list of users
+   * @throws RuntimeException if a database error occurs
+   */
   public List<User> getAll(int page, int pageSize, boolean includeDeleted) {
     int effectivePage = Math.max(page, 1);
     int effectivePageSize = Math.max(pageSize, 1);
@@ -203,14 +272,24 @@ public class UserDAO implements DAO<User, Long> {
     return users;
   }
 
+  /**
+   * Convenience method: returns first page (1) with 100 records, excluding deleted users.
+   *
+   * @return list of up to 100 most recently created non-deleted users
+   */
   public List<User> getAll() {
     return getAll(1, 100, false);
   }
 
-  // =============================================================================
-  // UPDATE & DELETE (unchanged from your original)
-  // =============================================================================
-
+  /**
+   * Updates an existing user's fields (username, names, email, password).
+   * Only updates non-deleted users.
+   *
+   * @param id     ID of the user to update
+   * @param entity updated user data
+   * @return updated entity or {@code null} if user not found or was deleted
+   * @throws RuntimeException if a database error occurs
+   */
   @Override
   public User update(Long id, User entity) {
     final String UPDATE = """
@@ -243,6 +322,13 @@ public class UserDAO implements DAO<User, Long> {
     }
   }
 
+  /**
+   * Soft-deletes a user by setting {@code is_deleted = true} and recording {@code deleted_at}.
+   *
+   * @param id ID of the user to soft-delete
+   * @return {@code true} if the user was found and marked deleted, {@code false} otherwise
+   * @throws RuntimeException if a database error occurs
+   */
   @Override
   public boolean delete(Long id) {
     final String DELETE = """
@@ -272,10 +358,6 @@ public class UserDAO implements DAO<User, Long> {
       throw new RuntimeException("Failed to delete user", e);
     }
   }
-
-  // =============================================================================
-  // Helpers (unchanged)
-  // =============================================================================
 
   private User mapRowToUser(ResultSet rs) throws SQLException {
     User user = new User();

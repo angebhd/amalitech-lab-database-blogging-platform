@@ -1,5 +1,6 @@
 package amalitech.blog.dao;
 
+import amalitech.blog.dao.enums.PostColumn;
 import amalitech.blog.model.Post;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,25 +8,29 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Data Access Object (DAO) for Post entities.
  * Provides CRUD operations for blog posts with soft-delete support.
+ * <p>
+ * All read operations exclude soft-deleted records by default,
+ * but provide overloads to include them when needed (e.g. admin views, audit, recovery).
+ * </p>
  */
 public class PostDAO implements DAO<Post, Long> {
 
   private final Logger log = LoggerFactory.getLogger(PostDAO.class);
 
   /**
-   * Creates a new post in the database and sets the generated ID on the entity.
+   * Creates a new post in the database and sets the generated ID and timestamps on the entity.
    *
-   * @param entity the post to create (will be modified to include generated ID)
-   * @return the created post with populated ID
-   * @throws RuntimeException if a database error occurs
+   * @param entity the post to create (will be modified to include generated ID and timestamps)
+   * @return the same entity instance with generated fields populated
+   * @throws RuntimeException if a database error occurs during insertion
    */
   @Override
   public Post create(Post entity) {
-
     final String INSERT = """
                 INSERT INTO posts (author_id, title, body)
                 VALUES (?, ?, ?)
@@ -57,23 +62,39 @@ public class PostDAO implements DAO<Post, Long> {
   }
 
   /**
-   * Retrieves a post by its ID, excluding soft-deleted records.
+   * Retrieves a post by its primary key (ID), excluding soft-deleted records by default.
    *
-   * @param id the ID of the post to retrieve
-   * @return the post if found and not deleted, otherwise {@code null}
+   * @param id the unique identifier of the post
+   * @return the matching post or {@code null} if not found or soft-deleted
    * @throws RuntimeException if a database error occurs
+   * @see #get(Long, boolean)
    */
   @Override
   public Post get(Long id) {
+    return get(id, false);
+  }
 
-    final String SELECT_BY_ID = """
+  /**
+   * Retrieves a post by its primary key (ID), with optional inclusion of soft-deleted records.
+   *
+   * @param id             the unique identifier of the post
+   * @param includeDeleted if {@code true}, returns the post even if marked as deleted
+   * @return the matching post or {@code null} if not found
+   * @throws RuntimeException if a database error occurs
+   */
+  public Post get(Long id, boolean includeDeleted) {
+    String sql = """
                 SELECT id, author_id, title, body, created_at, updated_at, is_deleted
                 FROM posts
-                WHERE id = ? AND is_deleted = false
+                WHERE id = ?
             """;
 
+    if (!includeDeleted) {
+      sql += " AND is_deleted = false";
+    }
+
     try (Connection connection = DatabaseConnection.getConnection();
-         PreparedStatement ps = connection.prepareStatement(SELECT_BY_ID)) {
+         PreparedStatement ps = connection.prepareStatement(sql)) {
 
       ps.setLong(1, id);
 
@@ -85,40 +106,153 @@ public class PostDAO implements DAO<Post, Long> {
 
     } catch (SQLException e) {
       log.error("Error fetching post with id {}", id, e);
-      throw new RuntimeException("Failed to fetch post", e);
+      throw new RuntimeException("Failed to fetch post by id", e);
     }
 
     return null;
   }
 
   /**
-   * Retrieves a paginated list of all non-deleted posts, ordered by creation date descending.
-   * Page numbering starts at 1.
+   * Finds all posts matching the given value in the specified column.
    *
-   * @param page     the page number (1-based), defaults to 1 if ≤ 0
-   * @param pageSize the number of records per page, defaults to 100 if ≤ 0
-   * @return list of posts for the requested page (may be empty)
+   * @param value          the value to search for (e.g. title string, author_id as string)
+   * @param column         the column to query (from {@link PostColumn} enum)
+   * @param includeDeleted if {@code true}, includes soft-deleted posts
+   * @return list of matching posts (typically 0–many)
    * @throws RuntimeException if a database error occurs
+   */
+  public List<Post> findBy(String value, PostColumn column, boolean includeDeleted) {
+    String sql = """
+                SELECT id, author_id, title, body, created_at, updated_at, is_deleted
+                FROM posts
+                WHERE %s = ?
+            """.formatted(column.name());
+
+    if (!includeDeleted) {
+      sql += " AND is_deleted = false";
+    }
+
+    List<Post> posts = new ArrayList<>();
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      // Handle type conversion based on column
+      if (column == PostColumn.AUTHOR_ID) {
+        try {
+          ps.setLong(1, Long.parseLong(value));
+        } catch (NumberFormatException ex) {
+          log.warn("Invalid numeric value for author_id: {}", value);
+          return List.of(); // or throw IllegalArgumentException
+        }
+      } else {
+        ps.setString(1, value);
+      }
+
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          posts.add(mapRowToPost(rs));
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Error finding posts by {} = {}", column.name(), value, e);
+      throw new RuntimeException("Failed to find posts by " + column.name(), e);
+    }
+
+    return posts;
+  }
+
+  /**
+   * Retrieves exactly one post matching the given value in the specified column.
+   * Throws exception if more than one record is found (data inconsistency).
+   *
+   * @param value          value to search for
+   * @param column         column to query against
+   * @param includeDeleted whether to include deleted records
+   * @return matching post or {@code null} if none found
+   * @throws IllegalStateException if multiple matches are found
+   * @throws RuntimeException      if a database error occurs
+   */
+  public Post getBy(String value, PostColumn column, boolean includeDeleted) {
+    List<Post> results = findBy(value, column, includeDeleted);
+
+    if (results.size() > 1) {
+      log.error("Multiple posts found for {} = {}. This indicates a data integrity issue.",
+              column.name(), value);
+      throw new IllegalStateException(
+              "Multiple posts found for " + column.name() + " = " + value);
+    }
+
+    return results.isEmpty() ? null : results.get(0);
+  }
+
+  /**
+   * Modern/optional style variant of getBy
+   */
+  public Optional<Post> findOneBy(String value, PostColumn column, boolean includeDeleted) {
+    return Optional.ofNullable(getBy(value, column, includeDeleted));
+  }
+
+  // Convenience overloads — exclude deleted by default
+  public List<Post> findBy(String value, PostColumn column) {
+    return findBy(value, column, false);
+  }
+
+  public Post getBy(String value, PostColumn column) {
+    return getBy(value, column, false);
+  }
+
+  public Optional<Post> findOneBy(String value, PostColumn column) {
+    return findOneBy(value, column, false);
+  }
+
+  /**
+   * Retrieves a paginated list of posts, excluding soft-deleted records by default.
+   *
+   * @param page     1-based page number
+   * @param pageSize number of records per page
+   * @return paginated list of posts
+   * @throws RuntimeException if a database error occurs
+   * @see #getAll(int, int, boolean)
    */
   @Override
   public List<Post> getAll(int page, int pageSize) {
+    return getAll(page, pageSize, false);
+  }
 
+  /**
+   * Retrieves a paginated list of posts with optional inclusion of soft-deleted records.
+   *
+   * @param page           1-based page number
+   * @param pageSize       number of records per page
+   * @param includeDeleted if {@code true}, includes soft-deleted posts
+   * @return paginated list of posts
+   * @throws RuntimeException if a database error occurs
+   */
+  public List<Post> getAll(int page, int pageSize, boolean includeDeleted) {
     int effectivePage = Math.max(page, 1);
     int effectivePageSize = Math.max(pageSize, 1);
     int offset = (effectivePage - 1) * effectivePageSize;
 
-    final String SELECT_ALL_PAGED = """
+    String sql = """
                 SELECT id, author_id, title, body, created_at, updated_at, is_deleted
                 FROM posts
-                WHERE is_deleted = false
-                ORDER BY created_at DESC
-                LIMIT ? OFFSET ?
+            """;
+
+    if (!includeDeleted) {
+      sql += " WHERE is_deleted = false";
+    }
+
+    sql += """
+                 ORDER BY created_at DESC
+                 LIMIT ? OFFSET ?
             """;
 
     List<Post> posts = new ArrayList<>();
 
     try (Connection connection = DatabaseConnection.getConnection();
-         PreparedStatement ps = connection.prepareStatement(SELECT_ALL_PAGED)) {
+         PreparedStatement ps = connection.prepareStatement(sql)) {
 
       ps.setInt(1, effectivePageSize);
       ps.setInt(2, offset);
@@ -130,7 +264,8 @@ public class PostDAO implements DAO<Post, Long> {
       }
 
     } catch (SQLException e) {
-      log.error("Error fetching paginated posts (page={}, size={})", effectivePage, effectivePageSize, e);
+      log.error("Error fetching paginated posts (page={}, size={}, includeDeleted={})",
+              effectivePage, effectivePageSize, includeDeleted, e);
       throw new RuntimeException("Failed to fetch posts", e);
     }
 
@@ -138,27 +273,26 @@ public class PostDAO implements DAO<Post, Long> {
   }
 
   /**
-   * Convenience method for getting the first page with default page size (100).
+   * Convenience method: first page (1), 100 records, excludes deleted posts.
    *
    * @return list of up to 100 most recently created non-deleted posts
-   * @throws RuntimeException if a database error occurs
    */
   public List<Post> getAll() {
-    return getAll(1, 100);
+    return getAll(1, 100, false);
   }
 
   /**
    * Updates an existing post's title and body.
    * Automatically updates the updated_at timestamp.
+   * Author cannot be changed via this method.
    *
-   * @param id     the ID of the post to update
-   * @param entity the updated post data (author_id is not updated)
-   * @return the updated entity if the update succeeded, {@code null} if post not found or was deleted
+   * @param id     ID of the post to update
+   * @param entity updated post data
+   * @return updated entity or {@code null} if not found or deleted
    * @throws RuntimeException if a database error occurs
    */
   @Override
   public Post update(Long id, Post entity) {
-
     final String UPDATE = """
                 UPDATE posts
                 SET title = ?,
@@ -196,13 +330,12 @@ public class PostDAO implements DAO<Post, Long> {
   /**
    * Soft-deletes a post by setting is_deleted = true and recording deletion timestamp.
    *
-   * @param id the ID of the post to delete
-   * @return {@code true} if the post was found and marked as deleted, {@code false} otherwise
+   * @param id ID of the post to soft-delete
+   * @return {@code true} if the post was found and marked deleted, {@code false} otherwise
    * @throws RuntimeException if a database error occurs
    */
   @Override
   public boolean delete(Long id) {
-
     final String DELETE = """
                 UPDATE posts
                 SET is_deleted = true,
