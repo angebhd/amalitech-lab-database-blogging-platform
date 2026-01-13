@@ -45,7 +45,7 @@ CREATE TABLE "comments" (
   "deleted_at" TIMESTAMP ,
   "is_deleted" BOOLEAN NOT NULL DEFAULT false
 );
-CREATE TYPE e_review as ENUM('ONE', 'TWO', 'TREE', 'FOUR', 'FIVE');
+CREATE TYPE e_review as ENUM('ONE', 'TWO', 'THREE', 'FOUR', 'FIVE');
 CREATE TABLE "reviews" (
   "id" BIGSERIAL PRIMARY KEY,
   "post_id" BIGINT NOT NULL REFERENCES posts (id) ON DELETE SET NULL,

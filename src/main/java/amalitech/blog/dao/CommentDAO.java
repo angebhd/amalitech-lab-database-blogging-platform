@@ -1,5 +1,6 @@
 package amalitech.blog.dao;
 
+import amalitech.blog.dao.enums.CommentColumn;
 import amalitech.blog.model.Comment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,11 +8,16 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Data Access Object (DAO) for Comment entities.
  * Provides CRUD operations for post comments with soft-delete support.
  * Supports nested/reply comments via parent_comment reference.
+ * <p>
+ * All read operations exclude soft-deleted records by default,
+ * but provide overloads to include them when needed (e.g. admin views, audit, recovery).
+ * </p>
  */
 public class CommentDAO implements DAO<Comment, Long> {
 
@@ -64,24 +70,40 @@ public class CommentDAO implements DAO<Comment, Long> {
   }
 
   /**
-   * Retrieves a comment by its ID, excluding soft-deleted records.
+   * Retrieves a comment by its primary key (ID), excluding soft-deleted records by default.
    *
-   * @param id the ID of the comment to retrieve
-   * @return the comment if found and not deleted, otherwise {@code null}
+   * @param id the unique identifier of the comment
+   * @return the matching comment or {@code null} if not found or soft-deleted
    * @throws RuntimeException if a database error occurs
+   * @see #get(Long, boolean)
    */
   @Override
   public Comment get(Long id) {
+    return get(id, false);
+  }
 
-    final String SELECT_BY_ID = """
+  /**
+   * Retrieves a comment by its primary key (ID), with optional inclusion of soft-deleted records.
+   *
+   * @param id             the unique identifier of the comment
+   * @param includeDeleted if {@code true}, returns the comment even if marked as deleted
+   * @return the matching comment or {@code null} if not found
+   * @throws RuntimeException if a database error occurs
+   */
+  public Comment get(Long id, boolean includeDeleted) {
+    String sql = """
                 SELECT id, post_id, user_id, body, parent_comment,
                        created_at, updated_at, is_deleted
                 FROM comments
-                WHERE id = ? AND is_deleted = false
+                WHERE id = ?
             """;
 
+    if (!includeDeleted) {
+      sql += " AND is_deleted = false";
+    }
+
     try (Connection connection = DatabaseConnection.getConnection();
-         PreparedStatement ps = connection.prepareStatement(SELECT_BY_ID)) {
+         PreparedStatement ps = connection.prepareStatement(sql)) {
 
       ps.setLong(1, id);
 
@@ -93,42 +115,151 @@ public class CommentDAO implements DAO<Comment, Long> {
 
     } catch (SQLException e) {
       log.error("Error fetching comment with id {}", id, e);
-      throw new RuntimeException("Failed to fetch comment", e);
+      throw new RuntimeException("Failed to fetch comment by id", e);
     }
 
     return null;
   }
 
   /**
-   * Retrieves a paginated list of all non-deleted comments,
-   * ordered by creation date descending.
-   * Page numbering starts at 1.
+   * Finds all comments matching the given value in the specified column.
    *
-   * @param page     the page number (1-based), defaults to 1 if ≤ 0
-   * @param pageSize the number of records per page, defaults to 100 if ≤ 0
-   * @return list of comments for the requested page (may be empty)
+   * @param value          the value to search for (e.g. post_id or user_id as string)
+   * @param column         the column to query (from {@link CommentColumn} enum)
+   * @param includeDeleted if {@code true}, includes soft-deleted comments
+   * @return list of matching comments
    * @throws RuntimeException if a database error occurs
+   */
+  public List<Comment> findBy(String value, CommentColumn column, boolean includeDeleted) {
+    String sql = """
+                SELECT id, post_id, user_id, body, parent_comment,
+                       created_at, updated_at, is_deleted
+                FROM comments
+                WHERE %s = ?
+            """.formatted(column.name());
+
+    if (!includeDeleted) {
+      sql += " AND is_deleted = false";
+    }
+
+    List<Comment> comments = new ArrayList<>();
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      // All supported columns are numeric (BIGINT)
+      try {
+        ps.setLong(1, Long.parseLong(value));
+      } catch (NumberFormatException ex) {
+        log.warn("Invalid numeric value for {}: {}", column.name(), value);
+        return List.of(); // or throw IllegalArgumentException
+      }
+
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          comments.add(mapRowToComment(rs));
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Error finding comments by {} = {}", column.name(), value, e);
+      throw new RuntimeException("Failed to find comments by " + column.name(), e);
+    }
+
+    return comments;
+  }
+
+  /**
+   * Retrieves exactly one comment matching the given value in the specified column.
+   * Throws exception if more than one record is found (data inconsistency).
+   *
+   * @param value          value to search for
+   * @param column         column to query against
+   * @param includeDeleted whether to include deleted records
+   * @return matching comment or {@code null} if none found
+   * @throws IllegalStateException if multiple matches are found
+   * @throws RuntimeException      if a database error occurs
+   */
+  public Comment getBy(String value, CommentColumn column, boolean includeDeleted) {
+    List<Comment> results = findBy(value, column, includeDeleted);
+
+    if (results.size() > 1) {
+      log.error("Multiple comments found for {} = {}. This indicates a data integrity issue.",
+              column.name(), value);
+      throw new IllegalStateException(
+              "Multiple comments found for " + column.name() + " = " + value);
+    }
+
+    return results.isEmpty() ? null : results.get(0);
+  }
+
+  /**
+   * Modern/optional style variant of getBy
+   */
+  public Optional<Comment> findOneBy(String value, CommentColumn column, boolean includeDeleted) {
+    return Optional.ofNullable(getBy(value, column, includeDeleted));
+  }
+
+  // Convenience overloads — exclude deleted by default
+  public List<Comment> findBy(String value, CommentColumn column) {
+    return findBy(value, column, false);
+  }
+
+  public Comment getBy(String value, CommentColumn column) {
+    return getBy(value, column, false);
+  }
+
+  public Optional<Comment> findOneBy(String value, CommentColumn column) {
+    return findOneBy(value, column, false);
+  }
+
+  /**
+   * Retrieves a paginated list of comments, excluding soft-deleted records by default.
+   *
+   * @param page     1-based page number
+   * @param pageSize number of records per page
+   * @return paginated list of comments
+   * @throws RuntimeException if a database error occurs
+   * @see #getAll(int, int, boolean)
    */
   @Override
   public List<Comment> getAll(int page, int pageSize) {
+    return getAll(page, pageSize, false);
+  }
 
+  /**
+   * Retrieves a paginated list of comments with optional inclusion of soft-deleted records.
+   *
+   * @param page           1-based page number
+   * @param pageSize       number of records per page
+   * @param includeDeleted if {@code true}, includes soft-deleted comments
+   * @return paginated list of comments
+   * @throws RuntimeException if a database error occurs
+   */
+  public List<Comment> getAll(int page, int pageSize, boolean includeDeleted) {
     int effectivePage = Math.max(page, 1);
     int effectivePageSize = Math.max(pageSize, 1);
     int offset = (effectivePage - 1) * effectivePageSize;
 
-    final String SELECT_ALL_PAGED = """
+    String sql = """
                 SELECT id, post_id, user_id, body, parent_comment,
                        created_at, updated_at, is_deleted
                 FROM comments
-                WHERE is_deleted = false
-                ORDER BY created_at DESC
-                LIMIT ? OFFSET ?
+            """;
+
+    if (!includeDeleted) {
+      sql += " WHERE is_deleted = false";
+    }
+
+    sql += """
+                 ORDER BY created_at DESC
+                 LIMIT ? OFFSET ?
             """;
 
     List<Comment> comments = new ArrayList<>();
 
     try (Connection connection = DatabaseConnection.getConnection();
-         PreparedStatement ps = connection.prepareStatement(SELECT_ALL_PAGED)) {
+         PreparedStatement ps = connection.prepareStatement(sql)) {
 
       ps.setInt(1, effectivePageSize);
       ps.setInt(2, offset);
@@ -140,7 +271,8 @@ public class CommentDAO implements DAO<Comment, Long> {
       }
 
     } catch (SQLException e) {
-      log.error("Error fetching paginated comments (page={}, size={})", effectivePage, effectivePageSize, e);
+      log.error("Error fetching paginated comments (page={}, size={}, includeDeleted={})",
+              effectivePage, effectivePageSize, includeDeleted, e);
       throw new RuntimeException("Failed to fetch comments", e);
     }
 
@@ -148,13 +280,12 @@ public class CommentDAO implements DAO<Comment, Long> {
   }
 
   /**
-   * Convenience method for getting the first page with default page size (100).
+   * Convenience method: first page (1), 100 records, excludes deleted comments.
    *
    * @return list of up to 100 most recently created non-deleted comments
-   * @throws RuntimeException if a database error occurs
    */
   public List<Comment> getAll() {
-    return getAll(1, 100);
+    return getAll(1, 100, false);
   }
 
   /**
@@ -203,8 +334,8 @@ public class CommentDAO implements DAO<Comment, Long> {
 
   /**
    * Soft-deletes a comment by setting is_deleted = true and recording deletion timestamp.
-   * Due to ON DELETE CASCADE on parent_comment and post_id references,
-   * child comments will also be affected if the database enforces it.
+   * Note: Due to ON DELETE CASCADE constraints in the schema,
+   * hard-deleting a parent comment or post will affect child comments.
    *
    * @param id the ID of the comment to delete
    * @return {@code true} if the comment was found and marked as deleted, {@code false} otherwise

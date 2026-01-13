@@ -21,6 +21,10 @@ public class UserService {
     return this.userDAO.create(user);
   }
 
+  public User get(Long id){
+    return this.userDAO.get(id);
+  }
+
   public User login(String username, String password){
     Optional<User> user = this.userDAO.findOneBy(username, UserColumn.USERNAME);
     if (user.isPresent()){

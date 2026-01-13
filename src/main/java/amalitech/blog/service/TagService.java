@@ -15,6 +15,11 @@ public class TagService {
     return this.tagDAO.getAll();
   }
 
+
+  public Tag get(Long id){
+    return this.tagDAO.get(id);
+  }
+
   public Tag create(String name){
     Tag exist = this.tagDAO.get(name);
     Tag t = new Tag();
