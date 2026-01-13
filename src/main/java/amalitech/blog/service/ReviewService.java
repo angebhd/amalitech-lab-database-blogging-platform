@@ -12,7 +12,7 @@ public class ReviewService {
     this.reviewDAO = new ReviewDAO();
   }
 
-  public List<Review> getByPost(Long postId){
+  public List<Review> getByPostId(Long postId){
     return this.reviewDAO.getByPostId(postId);
   }
 

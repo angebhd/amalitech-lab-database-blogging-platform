@@ -66,7 +66,7 @@ public class PostService {
       tagsId.forEach(a -> tags.add(this.tagService.get(a)) );
       dto.setTags(tags);
 
-      dto.setReviews(this.reviewService.getByPost(post.getId()));
+      dto.setReviews(this.reviewService.getByPostId(post.getId()));
       dto.setComments(this.commentService.getByPostId(post.getId()));
       postDetails.add(dto);
     });

@@ -1,5 +1,6 @@
 package amalitech.blog.controller;
 
+import amalitech.blog.ApplicationContext;
 import amalitech.blog.controller.posts.PostDetailController;
 import amalitech.blog.dto.PostDTO;
 import amalitech.blog.model.Post;
@@ -248,6 +249,7 @@ public class HomeController {
 
   @FXML
   private void handleLogout(ActionEvent event) throws IOException {
+    ApplicationContext.setAuthenticatedUser(null);
     FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/amalitech/blog/view/landing.fxml"));
     Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
 

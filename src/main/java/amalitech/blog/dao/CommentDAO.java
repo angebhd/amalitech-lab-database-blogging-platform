@@ -147,7 +147,6 @@ public class CommentDAO implements DAO<Comment, Long> {
     try (Connection conn = DatabaseConnection.getConnection();
          PreparedStatement ps = conn.prepareStatement(sql)) {
 
-      // All supported columns are numeric (BIGINT)
       try {
         ps.setLong(1, Long.parseLong(value));
       } catch (NumberFormatException ex) {

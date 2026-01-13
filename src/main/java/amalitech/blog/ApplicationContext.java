@@ -1,8 +1,7 @@
 package amalitech.blog;
 
 import amalitech.blog.model.User;
-import lombok.Getter;
-import lombok.Setter;
+
 
 
 public class ApplicationContext {
