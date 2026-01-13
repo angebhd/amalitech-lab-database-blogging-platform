@@ -30,6 +30,9 @@ public class PostTagsService {
   }
   public List<Long> getPostIdByTagId(Long tagId){
     return this.postTagsDAO.findPostIdsByTag(tagId);
+  }
 
+  public List<Long> getTopTags(int limit){
+    return this.postTagsDAO.findTopTagsId(limit);
   }
 }

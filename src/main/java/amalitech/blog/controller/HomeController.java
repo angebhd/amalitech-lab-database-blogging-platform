@@ -3,7 +3,6 @@ package amalitech.blog.controller;
 import amalitech.blog.ApplicationContext;
 import amalitech.blog.controller.posts.PostDetailController;
 import amalitech.blog.dto.PostDTO;
-import amalitech.blog.model.Post;
 import amalitech.blog.service.PostService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -23,6 +22,8 @@ import javafx.collections.FXCollections;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,16 +54,11 @@ public class HomeController {
     loadAndDisplayPosts();
 
     // Add listener for search
-    searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-      handleSearch(newValue);
-    });
+    searchField.textProperty().addListener((observable, oldValue, newValue) -> handleSearch(newValue));
 
     // Add listener for sort
     sortComboBox.getSelectionModel().selectedItemProperty().addListener(
-            (observable, oldValue, newValue) -> {
-              handleSort(newValue);
-            }
-    );
+            (observable, oldValue, newValue) -> handleSort(newValue));
   }
 
   private void loadAndDisplayPosts() {
@@ -99,7 +95,6 @@ public class HomeController {
         try {
           handlePostClick(event);
         } catch (IOException e) {
-
           throw new RuntimeException(e);
         }
       });
@@ -224,7 +219,7 @@ public class HomeController {
     if (body == null || body.isEmpty()) return 1;
     int wordCount = body.split("\\s+").length;
     int minutes = wordCount / 200; // Average reading speed
-    return minutes < 1 ? 1 : minutes;
+    return Math.max(minutes, 1);
   }
 
   @FXML
@@ -327,7 +322,7 @@ public class HomeController {
               }
               return false;
             })
-            .collect(Collectors.toList());
+            .toList();
 
     displayPosts(filtered);
   }
@@ -354,7 +349,7 @@ public class HomeController {
   }
 
   private void handleSort(String sortOption) {
-    List<PostDTO> sortedPosts = allPosts.stream().collect(Collectors.toList());
+    List<PostDTO> sortedPosts = new ArrayList<>(allPosts);
 
     switch (sortOption) {
       case "Latest":
@@ -362,8 +357,7 @@ public class HomeController {
                 b.getPost().getCreatedAt().compareTo(a.getPost().getCreatedAt()));
         break;
       case "Oldest":
-        sortedPosts.sort((a, b) ->
-                a.getPost().getCreatedAt().compareTo(b.getPost().getCreatedAt()));
+        sortedPosts.sort(Comparator.comparing(a -> a.getPost().getCreatedAt()));
         break;
       case "Most Popular":
         sortedPosts.sort((a, b) -> {
@@ -379,6 +373,7 @@ public class HomeController {
           return Integer.compare(commentsB, commentsA);
         });
         break;
+
     }
 
     displayPosts(sortedPosts);

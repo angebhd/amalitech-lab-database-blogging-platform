@@ -1,6 +1,5 @@
 package amalitech.blog.dao;
 
-import amalitech.blog.dao.enums.PostColumn;
 import amalitech.blog.model.Post;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Data Access Object (DAO) for Post entities.
@@ -112,100 +110,6 @@ public class PostDAO implements DAO<Post, Long> {
     return null;
   }
 
-  /**
-   * Finds all posts matching the given value in the specified column.
-   *
-   * @param value          the value to search for (e.g. title string, author_id as string)
-   * @param column         the column to query (from {@link PostColumn} enum)
-   * @param includeDeleted if {@code true}, includes soft-deleted posts
-   * @return list of matching posts (typically 0–many)
-   * @throws RuntimeException if a database error occurs
-   */
-  public List<Post> findBy(String value, PostColumn column, boolean includeDeleted) {
-    String sql = """
-                SELECT id, author_id, title, body, created_at, updated_at, is_deleted
-                FROM posts
-                WHERE %s = ?
-            """.formatted(column.name());
-
-    if (!includeDeleted) {
-      sql += " AND is_deleted = false";
-    }
-
-    List<Post> posts = new ArrayList<>();
-
-    try (Connection conn = DatabaseConnection.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
-
-      // Handle type conversion based on column
-      if (column == PostColumn.AUTHOR_ID) {
-        try {
-          ps.setLong(1, Long.parseLong(value));
-        } catch (NumberFormatException ex) {
-          log.warn("Invalid numeric value for author_id: {}", value);
-          return List.of(); // or throw IllegalArgumentException
-        }
-      } else {
-        ps.setString(1, value);
-      }
-
-      try (ResultSet rs = ps.executeQuery()) {
-        while (rs.next()) {
-          posts.add(mapRowToPost(rs));
-        }
-      }
-
-    } catch (SQLException e) {
-      log.error("Error finding posts by {} = {}", column.name(), value, e);
-      throw new RuntimeException("Failed to find posts by " + column.name(), e);
-    }
-
-    return posts;
-  }
-
-  /**
-   * Retrieves exactly one post matching the given value in the specified column.
-   * Throws exception if more than one record is found (data inconsistency).
-   *
-   * @param value          value to search for
-   * @param column         column to query against
-   * @param includeDeleted whether to include deleted records
-   * @return matching post or {@code null} if none found
-   * @throws IllegalStateException if multiple matches are found
-   * @throws RuntimeException      if a database error occurs
-   */
-  public Post getBy(String value, PostColumn column, boolean includeDeleted) {
-    List<Post> results = findBy(value, column, includeDeleted);
-
-    if (results.size() > 1) {
-      log.error("Multiple posts found for {} = {}. This indicates a data integrity issue.",
-              column.name(), value);
-      throw new IllegalStateException(
-              "Multiple posts found for " + column.name() + " = " + value);
-    }
-
-    return results.isEmpty() ? null : results.get(0);
-  }
-
-  /**
-   * Modern/optional style variant of getBy
-   */
-  public Optional<Post> findOneBy(String value, PostColumn column, boolean includeDeleted) {
-    return Optional.ofNullable(getBy(value, column, includeDeleted));
-  }
-
-  // Convenience overloads — exclude deleted by default
-  public List<Post> findBy(String value, PostColumn column) {
-    return findBy(value, column, false);
-  }
-
-  public Post getBy(String value, PostColumn column) {
-    return getBy(value, column, false);
-  }
-
-  public Optional<Post> findOneBy(String value, PostColumn column) {
-    return findOneBy(value, column, false);
-  }
 
   /**
    * Retrieves a paginated list of posts, excluding soft-deleted records by default.

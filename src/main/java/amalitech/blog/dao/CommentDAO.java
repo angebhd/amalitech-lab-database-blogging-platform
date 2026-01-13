@@ -199,18 +199,10 @@ public class CommentDAO implements DAO<Comment, Long> {
     return Optional.ofNullable(getBy(value, column, includeDeleted));
   }
 
-  // Convenience overloads — exclude deleted by default
   public List<Comment> findBy(String value, CommentColumn column) {
     return findBy(value, column, false);
   }
 
-  public Comment getBy(String value, CommentColumn column) {
-    return getBy(value, column, false);
-  }
-
-  public Optional<Comment> findOneBy(String value, CommentColumn column) {
-    return findOneBy(value, column, false);
-  }
 
   /**
    * Retrieves a paginated list of comments, excluding soft-deleted records by default.

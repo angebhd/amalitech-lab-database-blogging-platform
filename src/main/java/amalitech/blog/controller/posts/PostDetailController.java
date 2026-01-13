@@ -27,7 +27,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class PostDetailController {
 
@@ -119,14 +118,14 @@ public class PostDetailController {
   }
 
   private int getRatingValue(String rate) {
-    switch (rate) {
-      case "ONE": return 1;
-      case "TWO": return 2;
-      case "THREE": return 3;
-      case "FOUR": return 4;
-      case "FIVE": return 5;
-      default: return 0;
-    }
+    return switch (rate) {
+      case "ONE" -> 1;
+      case "TWO" -> 2;
+      case "THREE" -> 3;
+      case "FOUR" -> 4;
+      case "FIVE" -> 5;
+      default -> 0;
+    };
   }
 
   private String getStarsForRating(double rating) {
@@ -134,9 +133,7 @@ public class PostDetailController {
     boolean hasHalfStar = (rating - fullStars) >= 0.5;
 
     StringBuilder stars = new StringBuilder();
-    for (int i = 0; i < fullStars; i++) {
-      stars.append("⭐");
-    }
+    stars.append("⭐".repeat(Math.max(0, fullStars)));
     if (hasHalfStar && fullStars < 5) {
       stars.append("✨");
     }
@@ -163,7 +160,7 @@ public class PostDetailController {
     // Filter top-level comments (no parent)
     List<Comment> topLevelComments = allComments.stream()
             .filter(c -> c.getParentCommentId() == null)
-            .collect(Collectors.toList());
+            .toList();
 
     // Display each top-level comment with its replies
     for (Comment comment : topLevelComments) {
@@ -231,7 +228,7 @@ public class PostDetailController {
     // Get and display replies (nested comments)
     List<Comment> replies = allComments.stream()
             .filter(c -> comment.getId().equals(c.getParentCommentId()))
-            .collect(Collectors.toList());
+            .toList();
 
     if (!replies.isEmpty() && depth < 3) { // Limit nesting to 3 levels
       VBox repliesContainer = new VBox(10);
@@ -343,10 +340,6 @@ public class PostDetailController {
 
     return time.format(DateTimeFormatter.ofPattern("MMM d 'at' HH:mm"));
   }
-
-  // ────────────────────────────────────────
-  //              Event Handlers
-  // ────────────────────────────────────────
 
   @FXML
   private void handleBack(ActionEvent event) throws IOException {

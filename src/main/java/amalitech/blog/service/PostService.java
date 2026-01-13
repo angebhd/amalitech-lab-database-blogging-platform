@@ -3,7 +3,6 @@ package amalitech.blog.service;
 import amalitech.blog.dao.PostDAO;
 import amalitech.blog.dto.PostDTO;
 import amalitech.blog.model.Post;
-import amalitech.blog.model.PostTags;
 import amalitech.blog.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

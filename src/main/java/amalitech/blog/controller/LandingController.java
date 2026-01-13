@@ -6,10 +6,14 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class LandingController {
+
+  private final Logger log = LoggerFactory.getLogger(LandingController.class);
   @FXML
   private void handleLogin(ActionEvent event) {
     FXMLLoader fxmlLoader = new FXMLLoader(LandingController.class.getResource("/amalitech/blog/view/auth/login.fxml"));
@@ -17,7 +21,7 @@ public class LandingController {
     try {
       scene = new Scene(fxmlLoader.load(), 800, 600);
     } catch (IOException e) {
-      System.out.println("Failed to open login");
+      log.info("Failed to open login");
       throw new RuntimeException(e);
     }
 
@@ -28,6 +32,6 @@ public class LandingController {
 
   @FXML
   private void handleLearnMore(ActionEvent event) {
-    System.out.println("Learn More clicked - Implement feature showcase");
+    log.info("Learn More clicked - Implement feature showcase");
   }
 }

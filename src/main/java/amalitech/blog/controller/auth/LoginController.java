@@ -24,7 +24,7 @@ public class LoginController {
   @FXML
   private Label errorLabel;
 
-  private UserService userService = new UserService();
+  private final UserService userService = new UserService();
 
   @FXML
   private void handleLogin(ActionEvent event) {
@@ -67,11 +67,6 @@ public class LoginController {
     Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
     stage.setScene(scene);
     stage.setTitle("B-BLOG - Feed");
-  }
-
-
-  private boolean isValidEmail(String email) {
-    return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
   }
 
   private void showError(String message) {

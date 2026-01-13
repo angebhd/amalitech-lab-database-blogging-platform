@@ -3,7 +3,6 @@ package amalitech.blog.controller.posts;
 import amalitech.blog.ApplicationContext;
 import amalitech.blog.model.Post;
 import amalitech.blog.service.PostService;
-import amalitech.blog.service.TagService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -13,6 +12,9 @@ import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import javafx.scene.Node;
 import javafx.event.ActionEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Set;
@@ -37,8 +39,8 @@ public class CreatePostController {
   @FXML
   private Label titleCountLabel;
 
-  private PostService postService = new PostService();
-  private TagService tagService = new TagService();
+  private final PostService postService = new PostService();
+  private final Logger log =  LoggerFactory.getLogger(CreatePostController.class);
 
   @FXML
   public void initialize() {
@@ -64,7 +66,7 @@ public class CreatePostController {
   }
 
   @FXML
-  private void handlePublish(ActionEvent event) throws IOException {
+  private void handlePublish(ActionEvent event) {
     String title = titleField.getText().trim();
     String tagsText = tagsField.getText().trim();
     String body = bodyArea.getText().trim();
@@ -90,8 +92,8 @@ public class CreatePostController {
     // Get current user ID from session/auth service
     Long authorId = getCurrentUserId();
 
-    if (savePost(authorId, title, body, tags)) {
-      showSuccess("Post published successfully!");
+    if (savePost(authorId, title, body, tags) != null ) {
+      showSuccess();
 
       // Redirect to home after 1 second
       new Thread(() -> {
@@ -101,11 +103,11 @@ public class CreatePostController {
             try {
               handleBack(event);
             } catch (IOException e) {
-              e.printStackTrace();
+              log.error("Error", e);
             }
           });
         } catch (InterruptedException e) {
-          e.printStackTrace();
+          log.error("Error", e);
         }
       }).start();
     } else {
@@ -113,15 +115,14 @@ public class CreatePostController {
     }
   }
 
-  private boolean savePost(Long authorId, String title, String body, Set<String> tags) {
+  private Post savePost(Long authorId, String title, String body, Set<String> tags) {
     Post post = new Post();
     post.setAuthorId(authorId);
     post.setTitle(title);
     post.setBody(body);
 
-    this.postService.create(post, tags);
+    return this.postService.create(post, tags);
 
-    return true;
   }
 
   private Long getCurrentUserId() {
@@ -136,8 +137,8 @@ public class CreatePostController {
     successLabel.setManaged(false);
   }
 
-  private void showSuccess(String message) {
-    successLabel.setText(message);
+  private void showSuccess() {
+    successLabel.setText("Post published successfully!");
     successLabel.setVisible(true);
     successLabel.setManaged(true);
     errorLabel.setVisible(false);

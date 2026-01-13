@@ -61,7 +61,6 @@ public class PostTagsDAO implements DAO<PostTags, Long> {
 
   /**
    * Not supported for junction table with composite key.
-   * Use {@link #exists(Long, Long)} or specific finder methods instead.
    *
    * @param id ignored
    * @return always throws UnsupportedOperationException
@@ -194,36 +193,6 @@ public class PostTagsDAO implements DAO<PostTags, Long> {
   }
 
   /**
-   * Checks if a post is associated with a specific tag.
-   *
-   * @param postId post ID
-   * @param tagId  tag ID
-   * @return true if the association exists
-   */
-  public boolean exists(Long postId, Long tagId) {
-
-    final String EXISTS = """
-                SELECT 1 FROM post_tags
-                WHERE post_id = ? AND tag_id = ?
-            """;
-
-    try (Connection connection = DatabaseConnection.getConnection();
-         PreparedStatement ps = connection.prepareStatement(EXISTS)) {
-
-      ps.setLong(1, postId);
-      ps.setLong(2, tagId);
-
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next();
-      }
-
-    } catch (SQLException e) {
-      log.error("Error checking post-tag existence (post={}, tag={})", postId, tagId, e);
-      throw new RuntimeException("Failed to check tag association", e);
-    }
-  }
-
-  /**
    * Gets all tag IDs associated with a given post.
    *
    * @param postId the post to query
@@ -293,6 +262,42 @@ public class PostTagsDAO implements DAO<PostTags, Long> {
     }
 
     return postIds;
+  }
+
+  /**
+   *
+   * @param limit max number of tags to return
+   * @return list of top tags IDs (empty if none)
+   */
+  public List<Long> findTopTagsId(int limit) {
+
+    final String SELECT_BY_POST = """
+                SELECT tag_id, COUNT(*) as tag_occurrence
+                FROM post_tags
+                GROUP BY (tag_id)
+                ORDER BY tag_occurrence
+                LIMIT ?
+            """;
+
+    List<Long> tagIds = new ArrayList<>();
+
+    try (Connection connection = DatabaseConnection.getConnection();
+         PreparedStatement ps = connection.prepareStatement(SELECT_BY_POST)) {
+
+      ps.setLong(1, limit);
+
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          tagIds.add(rs.getLong("tag_id"));
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Error fetching top tags with limit {}", limit, e);
+      throw new RuntimeException("Failed to fetch post tags", e);
+    }
+
+    return tagIds;
   }
 
   private PostTags mapRowToPostTags(ResultSet rs) throws SQLException {
