@@ -220,17 +220,10 @@ public class HomeController {
   }
 
   private String getAuthorName(PostDTO postDTO) {
-    if (postDTO.getAuthor() != null) {
-      String firstName = postDTO.getAuthor().getFirstName();
-      String lastName = postDTO.getAuthor().getLastName();
-
-      if (firstName != null && !firstName.isEmpty() && lastName != null && !lastName.isEmpty()) {
-        return firstName + " " + lastName;
-      } else if (firstName != null && !firstName.isEmpty()) {
-        return firstName;
-      } else {
-        return postDTO.getAuthor().getUsername();
-      }
+    if (postDTO.getAuthorName() != null) {
+      String name = postDTO.getAuthorName();
+      if (name != null && !name.isEmpty())
+        return name;
     }
     return "Anonymous";
   }

@@ -19,7 +19,7 @@ public class PostService {
   private final CommentService commentService;
   private final Logger log = LoggerFactory.getLogger(PostService.class);
   private Map<String, List<PostDTO>> cachedPostDTOs = new HashMap<>();
-  private Map<Long, List<Post>> cachedPostByAuthor = new HashMap<>();
+  private final Map<Long, List<Post>> cachedPostByAuthor = new HashMap<>();
 
   public PostService(){
     this.postDAO = new PostDAO();
@@ -56,15 +56,15 @@ public class PostService {
   public List<PostDTO> loadFeed() {
     return this.loadFeed(1, 20);
   }
-    public List<PostDTO> loadFeed(int page, int pagesize){
-    List<Post> posts = this.postDAO.getAll(page, pagesize);
+    public List<PostDTO> loadFeed(int page, int pageSize){
+    List<Post> posts = this.postDAO.getAll(page, pageSize);
     List<PostDTO> postDetails = new ArrayList<>();
 
     posts.forEach(post -> {
       PostDTO dto = new PostDTO();
       dto.setPost(post);
       var author = this.userService.get(post.getAuthorId());
-      dto.setAuthor(author);
+      dto.setAuthorId(author.getId());
       dto.setAuthorName(author.getFirstName() + " " + author.getLastName());
 
       List<Long> tagsId = this.postTagsService.getTagsIdByPostId(post.getId());
@@ -73,7 +73,7 @@ public class PostService {
       dto.setTags(tags);
 
       dto.setReviews(this.reviewService.getByPostId(post.getId()));
-      dto.setComments(this.commentService.getByPostId(post.getId()));
+      this.commentService.getByPostId(post.getId());
       postDetails.add(dto);
     });
       this.cachedPostDTOs = new HashMap<>();
@@ -101,7 +101,6 @@ public class PostService {
     PostDTO dto = new PostDTO();
     dto.setPost(post);
     var author = this.userService.get(post.getAuthorId());
-    dto.setAuthor(author);
     dto.setAuthorName(author.getFirstName() + " " + author.getLastName());
     List<Long> tagsId = this.postTagsService.getTagsIdByPostId(post.getId());
     List<Tag> tags = new ArrayList<>();
@@ -109,7 +108,7 @@ public class PostService {
     dto.setTags(tags);
 
     dto.setReviews(this.reviewService.getByPostId(post.getId()));
-    dto.setComments(this.commentService.getByPostId(post.getId()));
+    this.commentService.getByPostId(post.getId());
 
     return  dto;
   }

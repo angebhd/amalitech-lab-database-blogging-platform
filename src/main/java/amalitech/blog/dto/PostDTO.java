@@ -11,11 +11,11 @@ import java.util.List;
 public class PostDTO {
 
   private Post post;
+  private Long authorId;
   private String authorName;
-  private User author;  // TODO:  To be removed
   private List<CommentDTO> commentDTOS;
+  private List<Comment> comments;
   private List<Tag> tags;
-  private List<Comment> comments; // TODO:  To be removed
   private List<Review> reviews;
 
 }

@@ -60,12 +60,11 @@ public class PostDetailController {
   private void loadPostData() {
     if (postDTO == null) return;
 
-    Long authorId = postDTO.getAuthor().getId();
-    String firstName = postDTO.getAuthor().getFirstName();
-    String lastName = postDTO.getAuthor().getLastName();
-    String authorName = (firstName != null ? firstName : "") + " " + (lastName != null ? lastName : "");
+    Long authorId = postDTO.getAuthorId();
+
+    String authorName = postDTO.getAuthorName();
     if (authorName.trim().isEmpty()) {
-      authorName = postDTO.getAuthor().getUsername();
+      authorName = "Anonymous";
     }
 
     LocalDateTime createdAt = postDTO.getPost().getCreatedAt();
