@@ -352,8 +352,23 @@ public class PostDetailController {
 
   @FXML
   private void handleEdit(ActionEvent event) {
-    // TODO: Navigate to edit post screen with current post data
-    System.out.println("Edit post → " + postDTO.getPost().getId());
+
+    // Load post detail screen
+    FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/amalitech/blog/view/posts/update-post.fxml"));
+    Scene scene = null;
+    try {
+      scene = new Scene(fxmlLoader.load(), 900, 700);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+
+    // Pass post ID to detail controller
+    UpdatePostController controller = fxmlLoader.getController();
+    controller.setPost(postDTO);
+
+    Stage stage = (Stage) ((Node) event.getSource()).getScene().getWindow();
+    stage.setScene(scene);
+    stage.setTitle("B-BLOG - Post Details");
   }
 
   @FXML

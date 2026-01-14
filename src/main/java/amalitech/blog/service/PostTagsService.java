@@ -32,6 +32,10 @@ public class PostTagsService {
     return this.postTagsDAO.findPostIdsByTag(tagId);
   }
 
+  public void deletePostTags(Long postId){
+    this.postTagsDAO.deleteByPost(postId);
+  }
+
   public List<Long> getTopTags(int limit){
     return this.postTagsDAO.findTopTagsId(limit);
   }

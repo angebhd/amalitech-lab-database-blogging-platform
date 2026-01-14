@@ -177,6 +177,44 @@ public class PostDAO implements DAO<Post, Long> {
   }
 
   /**
+   * Retrieves a paginated list of posts for an author
+   *
+   * @param authorId        id of the author
+   * @return  list of posts
+   * @throws RuntimeException if a database error occurs
+   */
+  public List<Post> getByAuthorId(Long authorId) {
+
+
+    String sql = """
+                SELECT id, author_id, title, body, created_at, updated_at, is_deleted
+                FROM posts
+                WHERE author_id = ?
+                ORDER BY created_at DESC
+            """;
+
+    List<Post> posts = new ArrayList<>();
+
+    try (Connection connection = DatabaseConnection.getConnection();
+         PreparedStatement ps = connection.prepareStatement(sql)) {
+
+      ps.setLong(1, authorId);
+
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          posts.add(mapRowToPost(rs));
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Error fetching by author with id: {}", authorId, e);
+      throw new RuntimeException("Failed to fetch posts", e);
+    }
+
+    return posts;
+  }
+
+  /**
    * Convenience method: first page (1), 100 records, excludes deleted posts.
    *
    * @return list of up to 100 most recently created non-deleted posts

@@ -53,7 +53,7 @@ public class UserDAO implements DAO<User, Long> {
 
     } catch (SQLException e) {
       log.error("Error creating user", e);
-      throw new RuntimeException("Failed to create user", e);
+      throw new RuntimeException(e.getMessage(), e);
     }
   }
 

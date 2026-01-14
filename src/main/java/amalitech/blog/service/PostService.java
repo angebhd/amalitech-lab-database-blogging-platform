@@ -73,12 +73,31 @@ public class PostService {
     return  postDetails;
   }
 
-  public Post get(Long id){
+  public PostDTO loadById(Long id){
+    Post post = this.postDAO.get(id);
+
+      PostDTO dto = new PostDTO();
+      dto.setPost(post);
+      dto.setAuthor(this.userService.get(post.getAuthorId()));
+
+      List<Long> tagsId = this.postTagsService.getTagsIdByPostId(post.getId());
+      List<Tag> tags = new ArrayList<>();
+      tagsId.forEach(a -> tags.add(this.tagService.get(a)) );
+      dto.setTags(tags);
+
+      dto.setReviews(this.reviewService.getByPostId(post.getId()));
+      dto.setComments(this.commentService.getByPostId(post.getId()));
+
+
+    return  dto;
+  }
+
+  public Post getById(Long id){
     return this.postDAO.get(id);
   }
 
   public List<Post> getByAuthorId(Long id){
-    return this.postDAO.getAll();
+    return this.postDAO.getByAuthorId(id);
 
   }
 }

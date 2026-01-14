@@ -16,6 +16,10 @@ public class ReviewService {
     return this.reviewDAO.getByPostId(postId);
   }
 
+  public List<Review> getByUserId(Long userId){
+    return this.reviewDAO.getByUserId(userId);
+  }
+
   public Review create(Review review){
     return this.reviewDAO.create(review);
   }

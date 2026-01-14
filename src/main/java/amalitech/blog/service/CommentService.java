@@ -17,6 +17,10 @@ public class CommentService {
     return this.commentDAO.findBy(String.valueOf(postId), CommentColumn.POST_ID);
   }
 
+  public List<Comment> getByUserId(Long postId){
+    return this.commentDAO.findBy(String.valueOf(postId), CommentColumn.USER_ID);
+  }
+
   public Comment create(Comment entity){
     return  this.commentDAO.create(entity);
   }

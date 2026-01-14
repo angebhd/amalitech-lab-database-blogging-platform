@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="amalitech.blog.controller.posts.UpdatePostController"
+            style="-fx-background-color: #f8f9fa;">
+
+    <!-- Top Navigation Bar -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 15 30; -fx-background-color: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);">
+            <Button text="← Cancel" onAction="#handleCancel"
+                    style="-fx-background-color: transparent; -fx-text-fill: #667eea; -fx-cursor: hand;">
+                <font>
+                    <Font name="System Bold" size="14"/>
+                </font>
+            </Button>
+            <Label text="Edit Post" style="-fx-text-fill: #2c3e50;">
+                <font>
+                    <Font name="System Bold" size="20"/>
+                </font>
+            </Label>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Update Post" onAction="#handleUpdate"
+                    style="-fx-background-color: #667eea; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 10 30; -fx-cursor: hand;">
+                <font>
+                    <Font name="System Bold" size="14"/>
+                </font>
+            </Button>
+        </HBox>
+    </top>
+
+    <!-- Main Content Area -->
+    <center>
+        <VBox alignment="CENTER" style="-fx-padding: 40;">
+            <VBox spacing="20" maxWidth="800" style="-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 40; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);">
+
+                <!-- Error Label -->
+                <Label fx:id="errorLabel" managed="false" visible="false" wrapText="true"
+                       style="-fx-background-color: #fee; -fx-text-fill: #c33; -fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #fcc; -fx-border-width: 1; -fx-border-radius: 8;">
+                    <font>
+                        <Font size="13"/>
+                    </font>
+                </Label>
+
+                <!-- Success Label -->
+                <Label fx:id="successLabel" managed="false" visible="false" wrapText="true"
+                       style="-fx-background-color: #d4edda; -fx-text-fill: #155724; -fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #c3e6cb; -fx-border-width: 1; -fx-border-radius: 8;">
+                    <font>
+                        <Font size="13"/>
+                    </font>
+                </Label>
+
+                <!-- Title Field -->
+                <VBox spacing="8">
+                    <Label text="Post Title" style="-fx-text-fill: #2c3e50;">
+                        <font>
+                            <Font name="System Bold" size="14"/>
+                        </font>
+                    </Label>
+                    <TextField fx:id="titleField" promptText="Enter your post title (max 50 characters)"
+                               style="-fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 12; -fx-border-color: #dee2e6; -fx-border-width: 1; -fx-border-radius: 8; -fx-font-size: 16px;">
+                    </TextField>
+                    <Label fx:id="titleCountLabel" text="0/50" style="-fx-text-fill: #6c757d;">
+                        <font>
+                            <Font size="12"/>
+                        </font>
+                    </Label>
+                </VBox>
+
+                <!-- Tags Field -->
+                <VBox spacing="8">
+                    <Label text="Tags (comma separated)" style="-fx-text-fill: #2c3e50;">
+                        <font>
+                            <Font name="System Bold" size="14"/>
+                        </font>
+                    </Label>
+                    <TextField fx:id="tagsField" promptText="e.g., Technology, Programming, JavaFX"
+                               style="-fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 12; -fx-border-color: #dee2e6; -fx-border-width: 1; -fx-border-radius: 8;">
+                        <font>
+                            <Font size="14"/>
+                        </font>
+                    </TextField>
+                </VBox>
+
+                <!-- Body TextArea -->
+                <VBox spacing="8" VBox.vgrow="ALWAYS">
+                    <Label text="Post Content" style="-fx-text-fill: #2c3e50;">
+                        <font>
+                            <Font name="System Bold" size="14"/>
+                        </font>
+                    </Label>
+                    <TextArea fx:id="bodyArea" promptText="Write your post content here..." wrapText="true" prefHeight="400"
+                              style="-fx-background-color: #f8f9fa; -fx-background-radius: 8; -fx-padding: 12; -fx-border-color: #dee2e6; -fx-border-width: 1; -fx-border-radius: 8; -fx-font-size: 14px;">
+                    </TextArea>
+                </VBox>
+
+            </VBox>
+        </VBox>
+    </center>
+
+</BorderPane>
+

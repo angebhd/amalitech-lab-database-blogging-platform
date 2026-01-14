@@ -1,4 +1,5 @@
 package amalitech.blog.controller.auth;
+import amalitech.blog.ApplicationContext;
 import amalitech.blog.model.User;
 import amalitech.blog.service.UserService;
 import amalitech.blog.utils.ValidatorUtil;
@@ -11,6 +12,9 @@ import javafx.scene.control.PasswordField;
 import javafx.stage.Stage;
 import javafx.scene.Node;
 import javafx.event.ActionEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 public class SignUpController {
@@ -37,6 +41,7 @@ public class SignUpController {
   private Label errorLabel;
 
   private final UserService userService = new UserService();
+  private final Logger log = LoggerFactory.getLogger(SignUpController.class);
 
   @FXML
   private void handleSignup(ActionEvent event) {
@@ -117,7 +122,10 @@ public class SignUpController {
     user.setLastName(lastName);
     user.setEmail(email);
     user.setPassword(password);
-    return this.userService.create(user);
+    User newUser = this.userService.create(user);
+    ApplicationContext.setAuthenticatedUser(newUser);
+    log.info("User with id: {}", newUser.getId());
+    return newUser;
 
   }
 

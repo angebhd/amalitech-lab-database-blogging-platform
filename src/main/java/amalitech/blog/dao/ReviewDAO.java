@@ -156,6 +156,45 @@ public class ReviewDAO implements DAO<Review, Long> {
    * ordered by creation date descending.
    * Page numbering starts at 1.
    *
+   * @param userId the post id
+   * @return list of reviews for the requested post_id (may be empty)
+   * @throws RuntimeException if a database error occurs
+   */
+  public List<Review> getByUserId(Long userId) {
+
+    final String SELECT_BY_POST_ID= """
+                SELECT id, post_id, user_id, rate,
+                       created_at, updated_at, is_deleted
+                FROM reviews
+                WHERE is_deleted = false AND user_id = ?
+                ORDER BY created_at DESC
+            """;
+
+    List<Review> reviews = new ArrayList<>();
+
+    try (Connection connection = DatabaseConnection.getConnection();
+         PreparedStatement ps = connection.prepareStatement(SELECT_BY_POST_ID)) {
+
+      ps.setLong(1, userId);
+
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          reviews.add(mapRowToReview(rs));
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Error fetching review for user with id {} ", userId, e);
+      throw new RuntimeException("Failed to fetch reviews", e);
+    }
+
+    return reviews;
+  }
+  /**
+   * Retrieves a list of all non-deleted reviews for a post_id,
+   * ordered by creation date descending.
+   * Page numbering starts at 1.
+   *
    * @param postId the post id
    * @return list of reviews for the requested post_id (may be empty)
    * @throws RuntimeException if a database error occurs
