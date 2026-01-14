@@ -36,8 +36,10 @@ The database is implemented in **PostgreSQL**.
 | `last_name` | VARCHAR(50) | | User's last name |
 | `email` | VARCHAR(50) | UNIQUE, NOT NULL | User's email address |
 | `password` | VARCHAR(150) | NOT NULL | Argon2 hashed password |
-| `is_deleted`| BOOLEAN | DEFAULT false | Soft delete flag |
-| `created_at`| TIMESTAMP | DEFAULT NOW() | Record creation time |
+| `created_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record creation time |
+| `updated_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record last update time |
+| `deleted_at`| TIMESTAMP | | Soft delete timestamp |
+| `is_deleted`| BOOLEAN | NOT NULL, DEFAULT false | Soft delete flag |
 
 #### `posts`
 | Attribute | Type | Constraints | Description |
@@ -46,36 +48,51 @@ The database is implemented in **PostgreSQL**.
 | `author_id`| BIGINT | REFERENCES users(id) | The user who wrote the post |
 | `title` | VARCHAR(50) | NOT NULL | Title of the blog post |
 | `body` | TEXT | NOT NULL | Main content of the post |
-| `is_deleted`| BOOLEAN | DEFAULT false | Soft delete flag |
+| `created_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record creation time |
+| `updated_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record last update time |
+| `deleted_at`| TIMESTAMP | | Soft delete timestamp |
+| `is_deleted`| BOOLEAN | NOT NULL, DEFAULT false | Soft delete flag |
 
 #### `comments`
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
 | `id` | BIGSERIAL | PRIMARY KEY | Unique identifier for the comment |
-| `post_id` | BIGINT | REFERENCES posts(id) | The post being commented on |
-| `user_id` | BIGINT | REFERENCES users(id) | The user who made the comment |
+| `post_id` | BIGINT | NOT NULL, REFERENCES posts(id) | The post being commented on |
+| `user_id` | BIGINT | NOT NULL, REFERENCES users(id) | The user who made the comment |
 | `body` | VARCHAR | NOT NULL | The comment text |
 | `parent_comment`| BIGINT | REFERENCES comments(id)| Self-reference for threading |
+| `created_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record creation time |
+| `updated_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record last update time |
+| `deleted_at`| TIMESTAMP | | Soft delete timestamp |
+| `is_deleted`| BOOLEAN | NOT NULL, DEFAULT false | Soft delete flag |
 
 #### `tags`
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
 | `id` | BIGSERIAL | PRIMARY KEY | Unique identifier for the tag |
 | `name` | VARCHAR(50) | UNIQUE, NOT NULL | The tag keyword |
+| `created_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record creation time |
+| `updated_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record last update time |
+| `deleted_at`| TIMESTAMP | | Soft delete timestamp |
+| `is_deleted`| BOOLEAN | NOT NULL, DEFAULT false | Soft delete flag |
 
 #### `reviews`
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
 | `id` | BIGSERIAL | PRIMARY KEY | Unique identifier for the review |
-| `post_id` | BIGINT | REFERENCES posts(id) | The post being rated |
-| `user_id` | BIGINT | REFERENCES users(id) | The user who gave the rating |
-| `rate` | e_review | ENUM (1-5) | Star rating value |
+| `post_id` | BIGINT | NOT NULL, REFERENCES posts(id) | The post being rated |
+| `user_id` | BIGINT | NOT NULL, REFERENCES users(id) | The user who gave the rating |
+| `rate` | e_review | NOT NULL | Star rating value (ENUM ONE-FIVE) |
+| `created_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record creation time |
+| `updated_at`| TIMESTAMP | NOT NULL, DEFAULT NOW() | Record last update time |
+| `deleted_at`| TIMESTAMP | | Soft delete timestamp |
+| `is_deleted`| BOOLEAN | NOT NULL, DEFAULT false | Soft delete flag |
 
 #### `post_tags`
 | Attribute | Type | Constraints | Description |
 |-----------|------|-------------|-------------|
-| `post_id` | BIGINT | PRIMARY KEY, FK | Reference to the post |
-| `tag_id` | BIGINT | PRIMARY KEY, FK | Reference to the tag |
+| `post_id` | BIGINT | NOT NULL, FK, COMPOSITE PK | Reference to the post |
+| `tag_id` | BIGINT | NOT NULL, FK, COMPOSITE PK | Reference to the tag |
 
 ### Normalization (3NF)
 - **1NF**: All attributes are atomic. Primary keys are defined for all tables.
@@ -83,10 +100,10 @@ The database is implemented in **PostgreSQL**.
 - **3NF**: No transitive dependencies. For example, user details are in the `users` table, not duplicated in `posts`.
 
 ### Constraints and Integrity
-- **Soft Deletes**: Managed via `is_deleted` (boolean) and `deleted_at` (timestamp) columns.
+- **Soft Deletes**: Managed via `is_deleted` (boolean) and `deleted_at` (timestamp) columns. All queries exclude records where `is_deleted` is true by default.
 - **Referential Integrity**: 
-    - `ON DELETE SET NULL` for `author_id` (keep posts if author is deleted).
+    - `ON DELETE SET NULL` for `author_id` and `user_id` (maintain content if user is deleted).
     - `ON DELETE CASCADE` for comments and tags associated with a deleted post.
 - **Data Validation**: 
     - `email` and `username` must be unique.
-    - `rate` in reviews is restricted by an ENUM (`ONE` to `FIVE`).
+    - `rate` in reviews is restricted by a custom ENUM type (`e_review`).
