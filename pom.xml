@@ -51,11 +51,6 @@
             <version>2.11</version>
         </dependency>
 
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>5.14.0</version>
-        </dependency>
 
         <!-- SLF4J API -->
         <dependency>
@@ -130,6 +125,18 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <mainClass>amalitech.blog.PerformanceMain</mainClass>
+                    <classpathScope>compile</classpathScope>
+                </configuration>
+            </plugin>
+
+
         </plugins>
     </build>
 </project>

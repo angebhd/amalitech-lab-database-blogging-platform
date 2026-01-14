@@ -63,3 +63,13 @@ CREATE TABLE "post_tags" (
   PRIMARY KEY (post_id, tag_id)
 );
 
+
+CREATE INDEX IF NOT EXISTS idx_users_username ON users (username);
+CREATE INDEX IF NOT EXISTS idx_posts_created_at_desc  ON posts (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_author_id ON posts (author_id);
+CREATE INDEX IF NOT EXISTS idx_comments_post_id_created_at ON comments (post_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_post_tags_tag_id ON post_tags (tag_id);
+
+-- Improves search ILIKE %keyword%
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_posts_title_trgm ON posts USING GIN (title gin_trgm_ops);

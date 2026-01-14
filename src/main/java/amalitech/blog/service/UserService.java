@@ -1,21 +1,32 @@
 package amalitech.blog.service;
 
+import amalitech.blog.dao.CommentDAO;
+import amalitech.blog.dao.PostDAO;
 import amalitech.blog.dao.UserDAO;
+import amalitech.blog.dao.enums.CommentColumn;
 import amalitech.blog.dao.enums.UserColumn;
 import amalitech.blog.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class UserService {
   private final PasswordHashService passwordHashService;
   private final UserDAO userDAO;
+  private final PostDAO postDAO;
+  private final CommentDAO commentDAO;
+  private final ReviewService reviewService;
   private final Logger log = LoggerFactory.getLogger(UserService.class);
 
   public UserService(){
     this.passwordHashService = new PasswordHashService();
     this.userDAO = new UserDAO();
+    this.postDAO = new PostDAO();
+    this.commentDAO = new CommentDAO();
+    this.reviewService = new ReviewService();
   }
 
   public User create(User user){
@@ -58,5 +69,26 @@ public class UserService {
 
   public boolean delete (Long id){
     return  this.userDAO.delete(id);
+  }
+
+  public Map<String, Integer> getUserStats(Long userId){
+    Map<String, Integer> response = new HashMap<>();
+    int postsCount = postDAO.getByAuthorId(userId).size();
+    response.put("postCount", postsCount);
+
+    int commentsCount = this.commentDAO.findBy(String.valueOf(userId), CommentColumn.USER_ID, false).size();
+    response.put("commentsCount", commentsCount);
+
+    int reviewsCount = this.reviewService.getByUserId(userId).size();
+    response.put("reviewsCount", reviewsCount);
+
+    return response;
+  }
+
+  public Map<String, Integer> getUserStats(Long userId, boolean withPerformance){
+    if (!withPerformance)
+      return this.getUserStats(userId);
+
+    return this.userDAO.getUserStats(userId);
   }
 }

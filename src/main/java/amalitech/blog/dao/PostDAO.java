@@ -1,12 +1,17 @@
 package amalitech.blog.dao;
 
+import amalitech.blog.dto.CommentDTO;
+import amalitech.blog.dto.PostDTO;
 import amalitech.blog.model.Post;
+import amalitech.blog.model.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Data Access Object (DAO) for Post entities.
@@ -185,7 +190,6 @@ public class PostDAO implements DAO<Post, Long> {
    */
   public List<Post> getByAuthorId(Long authorId) {
 
-
     String sql = """
                 SELECT id, author_id, title, body, created_at, updated_at, is_deleted
                 FROM posts
@@ -307,6 +311,164 @@ public class PostDAO implements DAO<Post, Long> {
   }
 
   /**
+   *
+   * @param postId
+   * @param includeDeleted
+   * @return
+   */
+
+  public PostDTO getPostDTO(Long postId, boolean includeDeleted) {
+    String sql = """
+            SELECT 
+                p.id, p.author_id, p.title, p.body,
+                p.created_at, p.updated_at, p.is_deleted,
+                u.username AS author_username,
+                COALESCE(NULLIF(u.first_name || ' ' || u.last_name, ' '), u.username) AS author_name
+            FROM posts p
+            LEFT JOIN users u ON p.author_id = u.id
+            WHERE p.id = ?
+              AND (p.is_deleted = false OR ? = true)
+            """;
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      ps.setLong(1, postId);
+      ps.setBoolean(2, includeDeleted);
+
+      try (ResultSet rs = ps.executeQuery()) {
+        if (!rs.next()) {
+          return null;
+        }
+
+        Post post = mapRowToPost(rs);
+        post.setDeleted(rs.getBoolean("is_deleted"));
+
+        PostDTO dto = new PostDTO();
+        dto.setPost(post);
+        dto.setAuthorName(rs.getString("author_name"));
+
+        // Load supporting data
+        dto.setTags(getTagsForPost(postId));
+        dto.setCommentDTOS(getCommentDTOsForPost(postId));
+
+        return dto;
+      }
+
+    } catch (SQLException e) {
+      log.error("Failed to load PostDTO id={}", postId, e);
+      throw new RuntimeException("Database error fetching single post", e);
+    }
+  }
+
+
+    /**
+     *
+     * @param page
+     * @param pageSize
+     * @param search
+     * @param tagId
+     * @param authorId
+     * @param includeDeleted
+     * @return
+     */
+
+  public List<PostDTO> getPostDTOs(
+          int page,
+          int pageSize,
+          String search,
+          Long tagId,
+          Long authorId,
+          boolean includeDeleted) {
+
+    int effectivePage = Math.max(1, page);
+    int effectiveSize = Math.max(1, Math.min(pageSize, 50));
+    int offset = (effectivePage - 1) * effectiveSize;
+
+    StringBuilder sql = new StringBuilder("""
+            SELECT DISTINCT
+                p.id, p.author_id, p.title, p.body,
+                p.created_at, p.updated_at, p.is_deleted,
+                u.username AS author_username,
+                COALESCE(NULLIF(u.first_name || ' ' || u.last_name, ' '), u.username) AS author_name
+            FROM posts p
+            LEFT JOIN users u ON p.author_id = u.id
+            """);
+
+    List<Object> params = new ArrayList<>();
+    String and = " WHERE ";
+
+    if (!includeDeleted) {
+      sql.append(and).append("p.is_deleted = false ");
+      and = "AND ";
+    }
+
+    if (authorId != null) {
+      sql.append(and).append("p.author_id = ? ");
+      params.add(authorId);
+      and = "AND ";
+    }
+
+    if (tagId != null) {
+      sql.append(and).append("""
+                EXISTS (SELECT 1 FROM post_tags pt WHERE pt.post_id = p.id AND pt.tag_id = ?)
+                """);
+      params.add(tagId);
+      and = "AND ";
+    }
+
+    if (search != null && !search.trim().isEmpty()) {
+      String term = "%" + search.trim().toLowerCase() + "%";
+      sql.append(and).append("""
+                (LOWER(p.title) LIKE ? OR LOWER(p.body) LIKE ?)
+                """);
+      params.add(term);
+      params.add(term);
+      and = "AND ";
+    }
+
+    sql.append("""
+             ORDER BY p.created_at DESC
+             LIMIT ? OFFSET ?
+            """);
+    params.add(effectiveSize);
+    params.add(offset);
+
+    List<PostDTO> dtos = new ArrayList<>();
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+
+      for (int i = 0; i < params.size(); i++) {
+        ps.setObject(i + 1, params.get(i));
+      }
+
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          Post post = mapRowToPost(rs);
+          post.setDeleted(rs.getBoolean("is_deleted"));
+
+          PostDTO dto = new PostDTO();
+          dto.setPost(post);
+          dto.setAuthorName(rs.getString("author_name"));
+
+          // Only tags — no comments on list view
+          dto.setTags(getTagsForPost(post.getId()));
+
+          dtos.add(dto);
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Failed to load paginated PostDTOs", e);
+      throw new RuntimeException("Error fetching post list", e);
+    }
+
+    return dtos;
+  }
+
+
+  /**
    * Maps a ResultSet row to a Post object.
    *
    * @param rs the result set positioned at the current row
@@ -323,5 +485,93 @@ public class PostDAO implements DAO<Post, Long> {
     post.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
     post.setDeleted(rs.getBoolean("is_deleted"));
     return post;
+  }
+
+  private List<Tag> getTagsForPost(Long postId) {
+    String sql = """
+            SELECT t.id, t.name
+            FROM tags t
+            INNER JOIN post_tags pt ON t.id = pt.tag_id
+            WHERE pt.post_id = ?
+              AND t.is_deleted = false
+            ORDER BY t.name
+            """;
+
+    List<Tag> tags = new ArrayList<>();
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      ps.setLong(1, postId);
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          Tag tag = new Tag();
+          tag.setId(rs.getLong("id"));
+          tag.setName(rs.getString("name"));
+          tags.add(tag);
+        }
+      }
+    } catch (SQLException e) {
+      log.warn("Could not load tags for post {}", postId, e);
+    }
+    return tags;
+  }
+
+  private List<CommentDTO> getCommentDTOsForPost(Long postId) {
+    String sql = """
+            SELECT 
+                c.id, c.user_id, c.body, c.parent_comment, c.created_at,
+                u.username AS commenter_username,
+                u.first_name || ' ' || u.last_name AS commenter_fullname
+            FROM comments c
+            LEFT JOIN users u ON c.user_id = u.id
+            WHERE c.post_id = ?
+              AND c.is_deleted = false
+            ORDER BY c.created_at ASC
+            """;
+
+    Map<Long, CommentDTO> commentMap = new HashMap<>();
+    List<CommentDTO> roots = new ArrayList<>();
+
+    try (Connection conn = DatabaseConnection.getConnection();
+         PreparedStatement ps = conn.prepareStatement(sql)) {
+
+      ps.setLong(1, postId);
+      try (ResultSet rs = ps.executeQuery()) {
+        while (rs.next()) {
+          CommentDTO dto = new CommentDTO();
+          dto.setId(rs.getLong("id"));
+          dto.setBody(rs.getString("body"));
+          dto.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+
+          // Commenter name
+          String full = rs.getString("commenter_fullname");
+          String user = rs.getString("commenter_username");
+          dto.setCommenterName(
+                  (full != null && !full.trim().isEmpty()) ? full.trim() : user
+          );
+
+          Long parentId = rs.getLong("parent_comment");
+          if (!rs.wasNull()) {
+            CommentDTO parent = commentMap.get(parentId);
+            if (parent != null) {
+              if (parent.getChildComments() == null) {
+                parent.setChildComments(new ArrayList<>());
+              }
+              parent.getChildComments().add(dto);
+            }
+          } else {
+            roots.add(dto);
+          }
+
+          commentMap.put(dto.getId(), dto);
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Failed to load comments for post {}", postId, e);
+    }
+
+    return roots;
   }
 }

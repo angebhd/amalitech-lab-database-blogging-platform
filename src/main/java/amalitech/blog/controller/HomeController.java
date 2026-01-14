@@ -3,10 +3,13 @@ package amalitech.blog.controller;
 import amalitech.blog.ApplicationContext;
 import amalitech.blog.controller.posts.PostDetailController;
 import amalitech.blog.dto.PostDTO;
+import amalitech.blog.model.Tag;
 import amalitech.blog.service.PostService;
+import amalitech.blog.service.TagService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -38,7 +41,11 @@ public class HomeController {
   @FXML
   private VBox postsContainer;
 
+  @FXML
+  private VBox tagsButtonsContainer;
+
   private final PostService postService = new PostService();
+  private final TagService tagService = new TagService();
   private List<PostDTO> allPosts; // Cache all posts
   private String currentFilter = "All";
 
@@ -50,6 +57,9 @@ public class HomeController {
     ));
     sortComboBox.getSelectionModel().selectFirst();
 
+    // Load dynamic tags
+    loadDynamicTags();
+
     // Load posts from database
     loadAndDisplayPosts();
 
@@ -59,6 +69,46 @@ public class HomeController {
     // Add listener for sort
     sortComboBox.getSelectionModel().selectedItemProperty().addListener(
             (observable, oldValue, newValue) -> handleSort(newValue));
+  }
+
+  private void loadDynamicTags() {
+    // Clear existing tags
+    tagsButtonsContainer.getChildren().clear();
+
+    // Add "All" button first
+    Button allButton = createTagButton("All", true);
+    tagsButtonsContainer.getChildren().add(allButton);
+
+    // Load top tags from database
+    List<Tag> topTags = tagService.getTop(10); // Load top 10 tags
+
+    // Create button for each tag
+    for (Tag tag : topTags) {
+      Button tagButton = createTagButton(tag.getName(), false);
+      tagsButtonsContainer.getChildren().add(tagButton);
+    }
+  }
+
+  private Button createTagButton(String tagName, boolean isActive) {
+    Button button = new Button(tagName);
+    button.setMaxWidth(Double.MAX_VALUE);
+    button.setFont(Font.font("System", 14));
+
+    // Set initial style
+    if (isActive) {
+      button.setStyle("-fx-background-color: #667eea; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 10; -fx-cursor: hand;");
+    } else {
+      button.setStyle("-fx-background-color: transparent; -fx-text-fill: #6c757d; -fx-cursor: hand; -fx-padding: 10;");
+    }
+
+    // Add click handler
+    button.setOnAction(event -> {
+      currentFilter = tagName;
+      filterPosts(tagName);
+      updateActiveButton(button);
+    });
+
+    return button;
   }
 
   private void loadAndDisplayPosts() {
@@ -91,13 +141,13 @@ public class HomeController {
     card.setStyle("-fx-background-color: white; -fx-background-radius: 12; -fx-padding: 20; " +
             "-fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 2);");
     card.setUserData(postDTO);
-      card.setOnMouseClicked(event -> {
-        try {
-          handlePostClick(event);
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      });
+    card.setOnMouseClicked(event -> {
+      try {
+        handlePostClick(event);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    });
     // Post Header (Author info)
     HBox header = new HBox(12);
     header.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
@@ -115,8 +165,8 @@ public class HomeController {
 
     // Get time ago and first tag
     String timeAgo = formatTimeAgo(postDTO.getPost().getCreatedAt());
-    String category = getFirstTag(postDTO);
-    Label postMeta = new Label(timeAgo + (category != null ? " · " + category : ""));
+    String tags = getAllTags(postDTO);
+    Label postMeta = new Label(timeAgo + (tags != null ? " · " + tags : ""));
     postMeta.setStyle("-fx-text-fill: #6c757d;");
     postMeta.setFont(Font.font("System", 12));
 
@@ -185,11 +235,11 @@ public class HomeController {
     return "Anonymous";
   }
 
-  private String getFirstTag(PostDTO postDTO) {
+  private String getAllTags(PostDTO postDTO) {
     if (postDTO.getTags() != null && !postDTO.getTags().isEmpty()) {
       StringBuilder tags = new StringBuilder();
       postDTO.getTags().forEach(t -> tags.append(t.getName()).append(" "));
-      return  tags.toString();
+      return tags.toString().trim();
     }
     return null;
   }
@@ -258,7 +308,6 @@ public class HomeController {
     VBox clickedPost = (VBox) event.getSource();
     PostDTO post = (PostDTO) clickedPost.getUserData();
 
-
     // Load post detail screen
     FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/amalitech/blog/view/posts/post-details.fxml"));
     Scene scene = new Scene(fxmlLoader.load(), 900, 700);
@@ -272,53 +321,18 @@ public class HomeController {
     stage.setTitle("B-BLOG - Post Details");
   }
 
-  @FXML
-  private void handleFilterAll(ActionEvent event) {
-    currentFilter = "All";
-    filterPosts("All");
-    updateActiveButton((Node) event.getSource());
-  }
-
-  @FXML
-  private void handleFilterTechnology(ActionEvent event) {
-    currentFilter = "Technology";
-    filterPosts("Technology");
-    updateActiveButton((Node) event.getSource());
-  }
-
-  @FXML
-  private void handleFilterLifestyle(ActionEvent event) {
-    currentFilter = "Lifestyle";
-    filterPosts("Lifestyle");
-    updateActiveButton((Node) event.getSource());
-  }
-
-  @FXML
-  private void handleFilterTravel(ActionEvent event) {
-    currentFilter = "Travel";
-    filterPosts("Travel");
-    updateActiveButton((Node) event.getSource());
-  }
-
-  @FXML
-  private void handleFilterFood(ActionEvent event) {
-    currentFilter = "Food";
-    filterPosts("Food");
-    updateActiveButton((Node) event.getSource());
-  }
-
-  private void filterPosts(String category) {
-    if ("All".equals(category)) {
+  private void filterPosts(String tagName) {
+    if ("All".equals(tagName)) {
       displayPosts(allPosts);
       return;
     }
 
-    // Filter posts by tag/category
+    // Filter posts by tag
     List<PostDTO> filtered = allPosts.stream()
             .filter(postDTO -> {
               if (postDTO.getTags() != null) {
                 return postDTO.getTags().stream()
-                        .anyMatch(tag -> tag.getName().equalsIgnoreCase(category));
+                        .anyMatch(tag -> tag.getName().equalsIgnoreCase(tagName));
               }
               return false;
             })
@@ -343,13 +357,17 @@ public class HomeController {
               String body = postDTO.getPost().getBody().toLowerCase();
               return title.contains(searchLower) || body.contains(searchLower);
             })
-            .collect(Collectors.toList());
+            .toList();
 
     displayPosts(searchResults);
   }
 
   private void handleSort(String sortOption) {
-    List<PostDTO> sortedPosts = new ArrayList<>(allPosts);
+    // Get the currently filtered posts
+    List<PostDTO> postsToSort = getFilteredPosts();
+
+    // Sort the filtered posts
+    List<PostDTO> sortedPosts = new ArrayList<>(postsToSort);
 
     switch (sortOption) {
       case "Latest":
@@ -361,9 +379,9 @@ public class HomeController {
         break;
       case "Most Popular":
         sortedPosts.sort((a, b) -> {
-          int likesA = a.getReviews() != null ? a.getReviews().size() : 0;
-          int likesB = b.getReviews() != null ? b.getReviews().size() : 0;
-          return Integer.compare(likesB, likesA);
+          int popularityA = getPopularityScore(a);
+          int popularityB = getPopularityScore(b);
+          return Integer.compare(popularityB, popularityA);
         });
         break;
       case "Most Commented":
@@ -373,23 +391,45 @@ public class HomeController {
           return Integer.compare(commentsB, commentsA);
         });
         break;
-
+      default:
     }
 
     displayPosts(sortedPosts);
   }
 
+  private List<PostDTO> getFilteredPosts() {
+    if ("All".equals(currentFilter)) {
+      return new ArrayList<>(allPosts);
+    }
+
+    // Filter posts by current tag
+    return allPosts.stream()
+            .filter(postDTO -> {
+              if (postDTO.getTags() != null) {
+                return postDTO.getTags().stream()
+                        .anyMatch(tag -> tag.getName().equalsIgnoreCase(currentFilter));
+              }
+              return false;
+            })
+            .collect(Collectors.toList());
+  }
+
+  private int getPopularityScore(PostDTO postDTO) {
+    int reviews = postDTO.getReviews() != null ? postDTO.getReviews().size() : 0;
+    int comments = postDTO.getComments() != null ? postDTO.getComments().size() : 0;
+    return reviews + comments;
+  }
+
   private void updateActiveButton(Node clickedButton) {
-    // Reset all category buttons to default style
-    VBox sidebar = (VBox) clickedButton.getParent();
-    for (Node node : sidebar.getChildren()) {
-      if (node instanceof javafx.scene.control.Button) {
+    // Reset all tag buttons to default style
+    for (Node node : tagsButtonsContainer.getChildren()) {
+      if (node instanceof Button) {
         node.setStyle("-fx-background-color: transparent; -fx-text-fill: #6c757d; -fx-cursor: hand; -fx-padding: 10;");
       }
     }
 
     // Set clicked button as active
-    clickedButton.setStyle("-fx-background-color: #667eea; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 10;");
+    clickedButton.setStyle("-fx-background-color: #667eea; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 10; -fx-cursor: hand;");
   }
 
   private List<PostDTO> loadFeed() {

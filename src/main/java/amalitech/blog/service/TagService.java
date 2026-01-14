@@ -3,6 +3,7 @@ package amalitech.blog.service;
 import amalitech.blog.dao.TagDAO;
 import amalitech.blog.model.Tag;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class TagService {
@@ -38,6 +39,12 @@ public class TagService {
       Tag tag = this.create(tagName);
       this.postTagsService.create(postId, tag.getId());
     });
+  }
+
+  public List<Tag> getTop(int limit){
+    List<Tag> tags = new ArrayList<>(limit);
+    this.postTagsService.getTopTagsId(limit).forEach(e -> tags.add(this.get(e)));
+    return tags;
   }
 
 }

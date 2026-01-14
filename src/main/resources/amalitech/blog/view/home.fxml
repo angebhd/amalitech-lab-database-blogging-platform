@@ -63,9 +63,9 @@
     <center>
         <HBox style="-fx-padding: 20;">
 
-            <!-- Left Sidebar (Categories/Filters) -->
+            <!-- Left Sidebar (Dynamic Tags) -->
             <VBox spacing="15" prefWidth="250" style="-fx-padding: 20; -fx-background-color: white; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 10, 0, 0, 2);">
-                <Label text="Categories" style="-fx-text-fill: #2c3e50;">
+                <Label text="Tags" style="-fx-text-fill: #2c3e50;">
                     <font>
                         <Font name="System Bold" size="18"/>
                     </font>
@@ -73,38 +73,12 @@
 
                 <Separator style="-fx-background-color: #dee2e6;"/>
 
-                <VBox spacing="8">
-                    <Button text="All Posts" onAction="#handleFilterAll" maxWidth="Infinity" alignment="CENTER_LEFT"
-                            style="-fx-background-color: #667eea; -fx-text-fill: white; -fx-background-radius: 8; -fx-padding: 10;">
-                        <font>
-                            <Font size="14"/>
-                        </font>
-                    </Button>
-                    <Button text="Technology" onAction="#handleFilterTechnology" maxWidth="Infinity" alignment="CENTER_LEFT"
-                            style="-fx-background-color: transparent; -fx-text-fill: #6c757d; -fx-cursor: hand; -fx-padding: 10;">
-                        <font>
-                            <Font size="14"/>
-                        </font>
-                    </Button>
-                    <Button text="Lifestyle" onAction="#handleFilterLifestyle" maxWidth="Infinity" alignment="CENTER_LEFT"
-                            style="-fx-background-color: transparent; -fx-text-fill: #6c757d; -fx-cursor: hand; -fx-padding: 10;">
-                        <font>
-                            <Font size="14"/>
-                        </font>
-                    </Button>
-                    <Button text="Travel" onAction="#handleFilterTravel" maxWidth="Infinity" alignment="CENTER_LEFT"
-                            style="-fx-background-color: transparent; -fx-text-fill: #6c757d; -fx-cursor: hand; -fx-padding: 10;">
-                        <font>
-                            <Font size="14"/>
-                        </font>
-                    </Button>
-                    <Button text="Food" onAction="#handleFilterFood" maxWidth="Infinity" alignment="CENTER_LEFT"
-                            style="-fx-background-color: transparent; -fx-text-fill: #6c757d; -fx-cursor: hand; -fx-padding: 10;">
-                        <font>
-                            <Font size="14"/>
-                        </font>
-                    </Button>
-                </VBox>
+                <!-- Dynamic Tag Buttons Container -->
+                <ScrollPane fitToWidth="true" style="-fx-background: transparent; -fx-background-color: transparent; -fx-border-color: transparent;" VBox.vgrow="ALWAYS">
+                    <VBox fx:id="tagsButtonsContainer" spacing="8">
+                        <!-- Tag buttons will be loaded dynamically from database -->
+                    </VBox>
+                </ScrollPane>
             </VBox>
 
             <!-- Feed Area -->

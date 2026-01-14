@@ -16,6 +16,7 @@ import javafx.event.ActionEvent;
 
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Optional;
 
 public class ProfileController {
@@ -68,9 +69,10 @@ public class ProfileController {
     if (currentUser == null) return;
 
     // Get counts from services
-    int postsCount = postService.getByAuthorId(currentUser.getId()).size();
-    int commentsCount = commentService.getByUserId(currentUser.getId()).size();
-    int reviewsCount = reviewService.getByUserId(currentUser.getId()).size();
+    Map<String, Integer> userStats = this.userService.getUserStats(currentUser.getId());
+    int postsCount = userStats.get("postCount");
+    int commentsCount = userStats.get("commentsCount");
+    int reviewsCount = userStats.get("reviewsCount");
 
     postsCountLabel.setText(String.valueOf(postsCount));
     commentsCountLabel.setText(String.valueOf(commentsCount));

@@ -6,9 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Data Access Object (DAO) for User entities.
@@ -359,6 +357,78 @@ public class UserDAO implements DAO<User, Long> {
     }
   }
 
+  /**
+   * Retrieves basic statistics for a given user (post count, comment count, review count).
+   * Uses efficient COUNT queries instead of loading full lists.
+   * Excludes soft-deleted records by default.
+   *
+   * @param userId the ID of the user to get stats for
+   * @return a Map containing:
+   *         - "postCount" → number of non-deleted posts
+   *         - "commentCount" → number of non-deleted comments
+   *         - "reviewCount" → number of non-deleted reviews
+   * @throws RuntimeException if a database error occurs
+   */
+  public Map<String, Integer> getUserStats(Long userId) {
+    Map<String, Integer> stats = new HashMap<>();
+
+    try (Connection conn = DatabaseConnection.getConnection()) {
+
+      // 1. Post count
+      String postSql = """
+                SELECT COUNT(*) 
+                FROM posts 
+                WHERE author_id = ? AND is_deleted = false
+            """;
+
+      try (PreparedStatement ps = conn.prepareStatement(postSql)) {
+        ps.setLong(1, userId);
+        try (ResultSet rs = ps.executeQuery()) {
+          if (rs.next()) {
+            stats.put("postCount", rs.getInt(1));
+          }
+        }
+      }
+
+      // 2. Comment count
+      String commentSql = """
+                SELECT COUNT(*) 
+                FROM comments 
+                WHERE user_id = ? AND is_deleted = false
+            """;
+
+      try (PreparedStatement ps = conn.prepareStatement(commentSql)) {
+        ps.setLong(1, userId);
+        try (ResultSet rs = ps.executeQuery()) {
+          if (rs.next()) {
+            stats.put("commentCount", rs.getInt(1));
+          }
+        }
+      }
+
+      // 3. Review count
+      String reviewSql = """
+                SELECT COUNT(*) 
+                FROM reviews 
+                WHERE user_id = ? AND is_deleted = false
+            """;
+
+      try (PreparedStatement ps = conn.prepareStatement(reviewSql)) {
+        ps.setLong(1, userId);
+        try (ResultSet rs = ps.executeQuery()) {
+          if (rs.next()) {
+            stats.put("reviewCount", rs.getInt(1));
+          }
+        }
+      }
+
+    } catch (SQLException e) {
+      log.error("Error fetching user stats for userId {}", userId, e);
+      throw new RuntimeException("Failed to retrieve user statistics", e);
+    }
+
+    return stats;
+  }
   private User mapRowToUser(ResultSet rs) throws SQLException {
     User user = new User();
     user.setId(rs.getLong("id"));

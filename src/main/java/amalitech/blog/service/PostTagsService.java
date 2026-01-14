@@ -36,7 +36,7 @@ public class PostTagsService {
     this.postTagsDAO.deleteByPost(postId);
   }
 
-  public List<Long> getTopTags(int limit){
+  public List<Long> getTopTagsId(int limit){
     return this.postTagsDAO.findTopTagsId(limit);
   }
 }
