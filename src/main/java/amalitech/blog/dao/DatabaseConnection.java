@@ -26,7 +26,7 @@ public class DatabaseConnection {
   }
 
   public static void testConnection()throws SQLException{
-    DriverManager.getConnection(URL, USER, PASSWORD);
+    DatabaseConnection.getConnection();
     log.info("Database connection test successful !");
   }
 }

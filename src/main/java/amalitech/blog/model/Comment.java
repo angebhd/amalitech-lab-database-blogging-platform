@@ -11,6 +11,4 @@ public class Comment extends BaseEntity{
   private Long userId;
   private String body;
   private Long parentCommentId;
-
-
 }

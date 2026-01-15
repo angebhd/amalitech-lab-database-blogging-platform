@@ -186,24 +186,6 @@ public class UserDAO implements DAO<User, Long> {
   /**
    * Convenience overload — excludes deleted records by default.
    *
-   * @see #findBy(String, UserColumn, boolean)
-   */
-  public List<User> findBy(String value, UserColumn column) {
-    return findBy(value, column, false);
-  }
-
-  /**
-   * Convenience overload — excludes deleted records by default.
-   *
-   * @see #getBy(String, UserColumn, boolean)
-   */
-  public User getBy(String value, UserColumn column) {
-    return getBy(value, column, false);
-  }
-
-  /**
-   * Convenience overload — excludes deleted records by default.
-   *
    * @see #findOneBy(String, UserColumn, boolean)
    */
   public Optional<User> findOneBy(String value, UserColumn column) {

@@ -12,10 +12,10 @@ public class PerformanceResult {
   private final double averageMs;
   private final double minMs;
   private final double maxMs;
-  private final long totalTimeNs;
+  private final double totalTimeNs;
 
   public PerformanceResult(String operationName, int runCount, double averageMs,
-                           double minMs, double maxMs, long totalTimeNs) {
+                           double minMs, double maxMs, double totalTimeNs) {
     this.operationName = operationName;
     this.runCount = runCount;
     this.averageMs = averageMs;
@@ -24,25 +24,11 @@ public class PerformanceResult {
     this.totalTimeNs = totalTimeNs;
   }
 
-  // Getters
-  public String getOperationName() { return operationName; }
-  public int getRunCount() { return runCount; }
-  public double getAverageMs() { return averageMs; }
-  public double getMinMs() { return minMs; }
-  public double getMaxMs() { return maxMs; }
-  public long getTotalTimeNs() { return totalTimeNs; }
 
   @Override
   public String toString() {
-    return String.format("%s (%d runs): avg = %.2f ms | min = %.2f ms | max = %.2f ms",
-            operationName, runCount, averageMs, minMs, maxMs);
+    return String.format("%s (%d runs): avg = %.2f ms | min = %.2f ms | max = %.2f ms | total time = %.2f ms",
+            operationName, runCount, averageMs, minMs, maxMs, totalTimeNs);
   }
 
-  /**
-   * Simple CSV line — copy-paste into your report table
-   */
-  public String toCsvLine() {
-    return String.format("%s,%d,%.2f,%.2f,%.2f",
-            operationName, runCount, averageMs, minMs, maxMs);
-  }
 }

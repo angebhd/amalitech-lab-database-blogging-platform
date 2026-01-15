@@ -88,7 +88,7 @@ public class PostService {
     return loadFeed(1, 20, withPerformance);
   }
 
-    public List<PostDTO> loadFeed(int page, int pageSize, boolean withPerformance){
+  public List<PostDTO> loadFeed(int page, int pageSize, boolean withPerformance){
     if (!withPerformance)
       return loadFeed();
     if(this.cachedPostDTOs.get(this.makeCacheKeyforLoadFeed(page, pageSize))!= null)

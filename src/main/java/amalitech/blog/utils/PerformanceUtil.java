@@ -26,7 +26,7 @@ public class PerformanceUtil {
   public static PerformanceResult measure(String operationName, Supplier<?> operation, int runCount) {
     long minNs = Long.MAX_VALUE;
     long maxNs = Long.MIN_VALUE;
-    long totalNs = 0;
+    double totalNs = 0;
     int successfulRuns = 0;
 
     for (int i = 0; i < runCount; i++) {
@@ -51,20 +51,13 @@ public class PerformanceUtil {
     double avgMs = (totalNs / (double) successfulRuns) / 1_000_000.0;
     double minMs = minNs / 1_000_000.0;
     double maxMs = maxNs / 1_000_000.0;
+    double totalMs = totalNs / 1_000_000.0;
 
-    PerformanceResult result = new PerformanceResult(
-            operationName, successfulRuns, avgMs, minMs, maxMs, totalNs
+    return new PerformanceResult(
+            operationName, successfulRuns, avgMs, minMs, maxMs, totalMs
     );
 
-//    log.info("{}", result);
 
-    return result;
   }
 
-  /**
-   * Convenience: run only once (quick test)
-   */
-  public static PerformanceResult measureOnce(String operationName, Supplier<?> operation) {
-    return measure(operationName, operation, 1);
-  }
 }

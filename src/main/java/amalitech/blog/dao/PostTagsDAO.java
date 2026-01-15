@@ -160,9 +160,8 @@ public class PostTagsDAO implements DAO<PostTags, Long> {
    * Removes all the tags related to a post
    *
    * @param postId the post ID
-   * @return true if  was deleted, false if it didn't exist
    */
-  public boolean deleteByPost(Long postId) {
+  public void deleteByPost(Long postId) {
 
     final String DELETE = """
                 DELETE FROM post_tags
@@ -182,7 +181,6 @@ public class PostTagsDAO implements DAO<PostTags, Long> {
         log.debug("No post-tag association found to remove - Post: {}", postId);
       }
 
-      return removed;
 
     } catch (SQLException e) {
       log.error("Error removing post-tag association (post={})", postId, e);

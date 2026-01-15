@@ -261,29 +261,6 @@ public class TagDAO implements DAO<Tag, Long> {
     }
   }
 
-  /**
-   * Check is the tag name already exists
-   *
-   * @param name tag name
-   * @return {@code true} if the tag is found, {@code false} otherwise
-   */
-  public boolean existsByName(String name){
-    String sql = "SELECT 1 FROM tags WHERE name = ? LIMIT 1";
-
-    try (Connection conn = DatabaseConnection.getConnection();
-         PreparedStatement ps = conn.prepareStatement(sql)) {
-
-      ps.setString(1, name);
-
-      try (ResultSet rs = ps.executeQuery()) {
-        return rs.next();
-      }
-
-    } catch (SQLException e) {
-      log.error("Failed to check if tag with name {} exists", name);
-      throw new RuntimeException("Error checking if user exists", e);
-    }
-  }
 
   /**
    * Maps a ResultSet row to a Tags object.

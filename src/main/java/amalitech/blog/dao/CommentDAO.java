@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Data Access Object (DAO) for Comment entities.
@@ -166,37 +165,6 @@ public class CommentDAO implements DAO<Comment, Long> {
     }
 
     return comments;
-  }
-
-  /**
-   * Retrieves exactly one comment matching the given value in the specified column.
-   * Throws exception if more than one record is found (data inconsistency).
-   *
-   * @param value          value to search for
-   * @param column         column to query against
-   * @param includeDeleted whether to include deleted records
-   * @return matching comment or {@code null} if none found
-   * @throws IllegalStateException if multiple matches are found
-   * @throws RuntimeException      if a database error occurs
-   */
-  public Comment getBy(String value, CommentColumn column, boolean includeDeleted) {
-    List<Comment> results = findBy(value, column, includeDeleted);
-
-    if (results.size() > 1) {
-      log.error("Multiple comments found for {} = {}. This indicates a data integrity issue.",
-              column.name(), value);
-      throw new IllegalStateException(
-              "Multiple comments found for " + column.name() + " = " + value);
-    }
-
-    return results.isEmpty() ? null : results.get(0);
-  }
-
-  /**
-   * Modern/optional style variant of getBy
-   */
-  public Optional<Comment> findOneBy(String value, CommentColumn column, boolean includeDeleted) {
-    return Optional.ofNullable(getBy(value, column, includeDeleted));
   }
 
   public List<Comment> findBy(String value, CommentColumn column) {

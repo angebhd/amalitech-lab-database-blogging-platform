@@ -6,6 +6,7 @@ import amalitech.blog.service.UserService;
 import amalitech.blog.service.PostService;
 import amalitech.blog.service.CommentService;
 import amalitech.blog.service.ReviewService;
+import amalitech.blog.utils.ValidatorUtil;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -37,9 +38,7 @@ public class ProfileController {
   @FXML private Label successLabel;
 
   private final UserService userService = new UserService();
-  private final PostService postService = new PostService();
-  private final CommentService commentService = new CommentService();
-  private final ReviewService reviewService = new ReviewService();
+
 
   private User currentUser;
 
@@ -106,7 +105,7 @@ public class ProfileController {
       return;
     }
 
-    if (!isValidEmail(email)) {
+    if (!ValidatorUtil.validateEmail(email)) {
       showError("Please enter a valid email address");
       return;
     }
@@ -169,11 +168,7 @@ public class ProfileController {
     Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
     alert.setTitle("Delete Account");
     alert.setHeaderText("Are you absolutely sure?");
-    alert.setContentText("This will permanently delete your account and all your data:\n" +
-            "• All your posts\n" +
-            "• All your comments\n" +
-            "• All your reviews\n\n" +
-            "This action cannot be undone!");
+    alert.setContentText("This will permanently delete your account and all your data:\n• All your posts\n• All your comments\n• All your reviews\n\nThis action cannot be undone!");
 
     Optional<ButtonType> result = alert.showAndWait();
     if (result.isPresent() && result.get() == ButtonType.OK) {
@@ -202,9 +197,6 @@ public class ProfileController {
     }
   }
 
-  private boolean isValidEmail(String email) {
-    return email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-  }
 
   private void showError(String message) {
     errorLabel.setText(message);
