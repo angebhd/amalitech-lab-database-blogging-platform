@@ -30,8 +30,4 @@ public class LandingController {
     stage.setTitle("B-BLOG - Login");
   }
 
-  @FXML
-  private void handleLearnMore(ActionEvent event) {
-    log.info("Learn More clicked - Implement feature showcase");
-  }
 }

@@ -51,12 +51,6 @@
                         <Font name="System Bold" size="16"/>
                     </font>
                 </Button>
-                <Button text="Learn More" onAction="#handleLearnMore"
-                        style="-fx-background-color: white; -fx-text-fill: #667eea; -fx-border-color: #667eea; -fx-border-width: 2; -fx-background-radius: 8; -fx-border-radius: 8; -fx-padding: 15 40 15 40; -fx-cursor: hand;">
-                    <font>
-                        <Font name="System Bold" size="16"/>
-                    </font>
-                </Button>
             </HBox>
         </VBox>
     </center>
