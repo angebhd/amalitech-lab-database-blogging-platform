@@ -95,7 +95,6 @@ When you start the JavaFX application, the flow is as follows:
 - `dotenv-java`: Secure environment variable management.
 - `argon2-jvm`: Advanced password hashing implementation.
 - `slf4j-api` & `logback-classic`: Comprehensive logging framework.
-- `junit-jupiter`: Testing framework for verification.
 - `jna`: Java Native Access for low-level library support.
 
 ---
