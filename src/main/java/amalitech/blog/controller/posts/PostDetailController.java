@@ -6,6 +6,7 @@ import amalitech.blog.model.Comment;
 import amalitech.blog.model.Review;
 import amalitech.blog.model.Tag;
 import amalitech.blog.service.CommentService;
+import amalitech.blog.service.PostService;
 import amalitech.blog.service.ReviewService;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -44,6 +45,7 @@ public class PostDetailController {
   private PostDTO postDTO;
   private Long currentUserId;
   private final CommentService commentService = new CommentService();
+  private final PostService postService = new PostService();
   private final ReviewService reviewService = new ReviewService();
   private Comment replyingToComment = null; // Track which comment we're replying to
 
@@ -380,8 +382,7 @@ public class PostDetailController {
     Optional<ButtonType> result = alert.showAndWait();
     if (result.isPresent() && result.get() == ButtonType.OK) {
       // TODO: Implement actual delete via PostService
-      // postService.delete(postDTO.getPost().getId());
-      System.out.println("Delete post → " + postDTO.getPost().getId());
+       this.postService.delete(postDTO.getPost().getId());
       handleBack(event);
     }
   }

@@ -53,6 +53,10 @@ public class PostService {
     return this.postDAO.update(id, post);
   }
 
+  public void delete(Long id){
+    this.postDAO.delete(id);
+  }
+
   public List<PostDTO> loadFeed() {
     return this.loadFeed(1, 20);
   }

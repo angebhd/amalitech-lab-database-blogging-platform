@@ -94,7 +94,6 @@ public class CreatePostController {
 
     if (savePost(authorId, title, body, tags) != null ) {
       showSuccess();
-
       // Redirect to home after 1 second
       new Thread(() -> {
         try {
@@ -122,7 +121,6 @@ public class CreatePostController {
     post.setBody(body);
 
     return this.postService.create(post, tags);
-
   }
 
   private Long getCurrentUserId() {

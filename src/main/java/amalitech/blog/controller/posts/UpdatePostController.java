@@ -86,7 +86,7 @@ public class UpdatePostController {
   }
 
   @FXML
-  private void handleUpdate(ActionEvent event) throws IOException {
+  private void handleUpdate(ActionEvent event) {
     String title = titleField.getText().trim();
     String tagsText = tagsField.getText().trim();
     String body = bodyArea.getText().trim();
@@ -106,7 +106,7 @@ public class UpdatePostController {
     List<String> tagNames = Arrays.stream(tagsText.split(","))
             .map(String::trim)
             .filter(tag -> !tag.isEmpty())
-            .collect(Collectors.toList());
+            .toList();
 
     // Update post
     Post post = postDTO.getPost();
@@ -120,7 +120,7 @@ public class UpdatePostController {
       // Update tags
       tagService.updatePostTags(post.getId(), tagNames);
 
-      showSuccess("Post updated successfully!");
+      showSuccess();
 
       // Wait a moment then redirect to post detail
       new Thread(() -> {
@@ -130,6 +130,7 @@ public class UpdatePostController {
             try {
               // Reload post data
               PostDTO updatedPost = postService.loadById(post.getId());
+              updatedPost.setAuthorId(currentUserId);
 
               FXMLLoader loader = new FXMLLoader(getClass().getResource("/amalitech/blog/view/posts/post-details.fxml"));
               Scene scene = new Scene(loader.load(), 900, 700);
@@ -162,8 +163,8 @@ public class UpdatePostController {
     successLabel.setManaged(false);
   }
 
-  private void showSuccess(String message) {
-    successLabel.setText(message);
+  private void showSuccess() {
+    successLabel.setText("Post updated successfully!");
     successLabel.setVisible(true);
     successLabel.setManaged(true);
     errorLabel.setVisible(false);
