@@ -7,6 +7,7 @@ A high-performance relational database-driven blogging platform built with JavaF
 ## System Architecture
 
 The platform follows a layered architecture to ensure separation of concerns:
+- **View Layer**: Provide user interface for interaction
 - **Controller Layer**: Manages JavaFX UI interactions.
 - **Service Layer**: Implements business logic and orchestration (includes in-memory caching).
 - **DAO (Data Access Object)**: Handles database persistence and optimized SQL execution.
